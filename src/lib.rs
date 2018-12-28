@@ -69,6 +69,41 @@ impl SExp {
     pub fn symbol(content: impl Into<String>) -> SExp {
         SExp::Symbol(content.into())
     }
+
+    pub fn into_list(self) -> Option<Vec<SExp>> {
+        match self {
+            SExp::List(exprs) => Some(exprs),
+            _ => None,
+        }
+    }
+
+    pub fn into_float(self) -> Option<f64> {
+        match self {
+            SExp::Float(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    pub fn into_integer(self) -> Option<i128> {
+        match self {
+            SExp::Integer(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    pub fn into_string(self) -> Option<String> {
+        match self {
+            SExp::Symbol(name) => Some(name),
+            _ => None,
+        }
+    }
+
+    pub fn into_symbol(self) -> Option<String> {
+        match self {
+            SExp::Symbol(name) => Some(name),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for SExp {

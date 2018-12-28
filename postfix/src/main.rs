@@ -17,7 +17,7 @@ fn top_level_eval(_sexp: Vec<SExp>) -> Option<String> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-enum Cmd {
+enum BuiltIn {
     Add,
     Div,
     Eq,
@@ -33,9 +33,9 @@ enum Cmd {
     Swap,
 }
 
-impl Cmd {
-    pub fn eval(name: String) -> Result<Cmd, Error> {
-        use self::Cmd::*;
+impl BuiltIn {
+    pub fn eval(name: String) -> Result<BuiltIn, Error> {
+        use self::BuiltIn::*;
         match name.as_ref() {
             "add" => Ok(Add),
             "div" => Ok(Div),
@@ -51,7 +51,7 @@ impl Cmd {
             "sub" => Ok(Sub),
             "swap" => Ok(Swap),
 
-            _ => Err(Error::Unknown),
+            _ => Err(Error::UnknownBuiltin(name)),
         }
     }
 }
@@ -60,46 +60,48 @@ impl Cmd {
 enum Command {
     ExecutableSequence(Vec<Command>),
     Integer(i128),
-    BuiltIn(Cmd),
+    BuiltIn(BuiltIn),
+}
+
+impl Command {
+    fn eval(sexp: SExp) -> Result<Command, Error> {
+        use dcpl::SExp::*;
+        match sexp {
+            List(exprs) => Ok(Command::ExecutableSequence(Command::eval_ex_seq(exprs)?)),
+            Integer(val) => Ok(Command::Integer(val)),
+            Symbol(name) => Ok(Command::BuiltIn(BuiltIn::eval(name)?)),
+
+            Float(_) => Err(Error::UsingFloat),
+            String(_) => Err(Error::UsingString),
+        }
+    }
+
+    fn eval_ex_seq(exprs: Vec<SExp>) -> Result<Vec<Command>, Error> {
+        let mut result = vec![];
+        for expr in exprs {
+            result.push(Command::eval(expr)?);
+        }
+        Ok(result)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
 enum Error {
-    Unknown,
+    UnknownBuiltin(String),
     UsingFloat,
     UsingString,
 }
 
-fn eval(sexp: SExp) -> Result<Command, Error> {
-    use dcpl::SExp::*;
-    match sexp {
-        List(exprs) => Ok(Command::ExecutableSequence(eval_ex_seq(exprs)?)),
-        Integer(val) => Ok(Command::Integer(val)),
-        Symbol(name) => Ok(Command::BuiltIn(Cmd::eval(name)?)),
-
-        Float(_) => Err(Error::UsingFloat),
-        String(_) => Err(Error::UsingString),
-    }
-}
-
-fn eval_ex_seq(exprs: Vec<SExp>) -> Result<Vec<Command>, Error> {
-    let mut result = vec![];
-    for expr in exprs {
-        result.push(eval(expr)?);
-    }
-    Ok(result)
-}
-
 #[cfg(test)]
 mod test {
-    use super::Cmd::*;
+    use super::BuiltIn::*;
     use super::Command::*;
     use super::*;
 
     use dcpl::SExpParser;
 
     fn eval_str(sexp_str: impl AsRef<str>) -> Result<Command, Error> {
-        eval(SExpParser::parse_line(sexp_str).expect("unexpected parse error"))
+        Command::eval(SExpParser::parse_line(sexp_str).expect("unexpected parse error"))
     }
 
     #[test]

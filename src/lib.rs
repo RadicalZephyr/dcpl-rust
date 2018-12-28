@@ -81,30 +81,36 @@ impl fmt::Display for SExp {
     }
 }
 
-pub struct Interpreter {
+pub struct Interpreter<F> {
     name: String,
     prompt: String,
     continuation_prompt: String,
     buffer: String,
     editor: Editor<()>,
+    interpret: F,
 }
 
-impl Interpreter {
-    pub fn new(name: &'static str) -> Interpreter {
-        Interpreter::new_with_prompts(name, format!("{}> ", name.to_lowercase()), "> ")
+impl<F> Interpreter<F>
+where
+    F: Fn(SExp) -> Option<String>,
+{
+    pub fn new(name: &'static str, interpret: F) -> Interpreter<F> {
+        Interpreter::new_with_prompts(name, format!("{}> ", name.to_lowercase()), "> ", interpret)
     }
 
     pub fn new_with_prompts(
         name: impl Into<String>,
         prompt: impl Into<String>,
         continuation_prompt: impl Into<String>,
-    ) -> Interpreter {
+        interpret: F,
+    ) -> Interpreter<F> {
         Interpreter {
             name: name.into(),
             prompt: prompt.into(),
             continuation_prompt: continuation_prompt.into(),
             buffer: String::new(),
             editor: Editor::new(),
+            interpret,
         }
     }
 
@@ -128,7 +134,9 @@ impl Interpreter {
 
                     match SExpParser::parse_line(&self.buffer) {
                         Ok(sexp) => {
-                            println!("read: {}", sexp);
+                            if let Some(output) = (self.interpret)(sexp) {
+                                println!("{}", output);
+                            }
                             self.editor.add_history_entry(self.buffer.as_ref());
                             self.buffer.clear();
                         }

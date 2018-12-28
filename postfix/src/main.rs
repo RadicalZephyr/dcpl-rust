@@ -1,3 +1,7 @@
+use dcpl::Interpreter;
+
 fn main() {
-    println!("Hello, world!");
+    println!("Welcome to the Postfix interpreter!");
+    let interpreter = Interpreter::new("postfix>");
+    interpreter.run();
 }

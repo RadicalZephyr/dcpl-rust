@@ -80,26 +80,57 @@ impl fmt::Display for SExp {
 
 pub struct Interpreter {
     prompt: String,
+    continuation_prompt: String,
+    buffer: String,
 }
 
 impl Interpreter {
-    pub fn new(prompt: impl Into<String>) -> Interpreter {
+    pub fn new(prompt: impl Into<String>, continuation_prompt: impl Into<String>) -> Interpreter {
         let prompt = prompt.into();
-        Interpreter { prompt }
+        let continuation_prompt = continuation_prompt.into();
+        let buffer = String::new();
+        Interpreter {
+            prompt,
+            continuation_prompt,
+            buffer,
+        }
     }
 
-    pub fn run(&self) {
+    pub fn run(&mut self) {
         let stdin_handle = io::stdin();
         let stdin = stdin_handle.lock();
+
         self.prompt();
         for line in stdin.lines() {
-            println!("{}", line.unwrap());
+            let line = line.expect("reading input failed...");
+            self.append_line(line);
+
+            match SExpParser::parse_line(&self.buffer) {
+                Ok(sexp) => {
+                    println!("read: {}", sexp);
+                    self.buffer.clear();
+                }
+                Err(_error) => {}
+            }
             self.prompt();
         }
     }
 
+    fn append_line(&mut self, line: String) {
+        if self.buffer.is_empty() {
+            self.buffer = line;
+        } else {
+            self.buffer.push_str(&line);
+        }
+    }
+
     fn prompt(&self) {
-        print!("{} ", self.prompt);
+        let prompt = if self.buffer.is_empty() {
+            &self.prompt
+        } else {
+            &self.continuation_prompt
+        };
+        print!("{} ", prompt);
         io::stdout().lock().flush().ok();
     }
 }

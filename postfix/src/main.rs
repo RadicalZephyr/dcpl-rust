@@ -35,7 +35,7 @@ struct TopLevel {
 impl TopLevel {
     fn interpret(&mut self, sexp: SExp) -> Option<String> {
         match sexp {
-            SExp::List(exprs) => match TopLevelCommand::eval(&exprs[..]) {
+            SExp::List(exprs) => match TopLevelCommand::eval(exprs) {
                 Ok(cmd) => match self.apply(cmd) {
                     Ok(result) => result,
                     Err(e) => Some(format!("error: {:?}", e)),
@@ -104,14 +104,18 @@ enum TopLevelCommand {
 }
 
 impl TopLevelCommand {
-    fn eval(exprs: &[SExp]) -> Result<TopLevelCommand, TopLevelError> {
-        match exprs.first() {
-            Some(SExp::Symbol(name)) => TopLevelCommand::eval_symbol(name, &exprs[1..]),
+    fn eval(exprs: impl IntoIterator<Item = SExp>) -> Result<TopLevelCommand, TopLevelError> {
+        let mut exprs = exprs.into_iter();
+        match exprs.next() {
+            Some(SExp::Symbol(name)) => TopLevelCommand::eval_symbol(&name, exprs),
             _ => Err(TopLevelError::NotASymbol),
         }
     }
 
-    fn eval_symbol(name: &str, rest: &[SExp]) -> Result<TopLevelCommand, TopLevelError> {
+    fn eval_symbol(
+        name: &str,
+        rest: impl IntoIterator<Item = SExp>,
+    ) -> Result<TopLevelCommand, TopLevelError> {
         if name == "def" {
             TopLevelCommand::def(rest)
         } else {
@@ -119,22 +123,19 @@ impl TopLevelCommand {
         }
     }
 
-    fn def(exprs: &[SExp]) -> Result<TopLevelCommand, TopLevelError> {
+    fn def(exprs: impl IntoIterator<Item = SExp>) -> Result<TopLevelCommand, TopLevelError> {
+        let mut exprs = exprs.into_iter();
         let name = exprs
-            .first()
-            .cloned()
+            .next()
             .ok_or_else(|| TopLevelError::NotEnoughArgs("def"))?
             .into_symbol()
             .ok_or(TopLevelError::NotASymbol)?;
         let num_args = exprs
-            .get(1)
-            .cloned()
+            .next()
             .ok_or_else(|| TopLevelError::NotEnoughArgs("def"))?
             .into_integer()
             .ok_or(TopLevelError::NotAnInteger)? as usize;
-        let commands = exprs[2..]
-            .iter()
-            .cloned()
+        let commands = exprs
             .map(Command::eval)
             .collect::<Result<Vec<Command>, Error>>()?;
         Ok(TopLevelCommand::Def {
@@ -144,15 +145,18 @@ impl TopLevelCommand {
         })
     }
 
-    fn call(name: &str, exprs: &[SExp]) -> Result<TopLevelCommand, TopLevelError> {
+    fn call(
+        name: &str,
+        exprs: impl IntoIterator<Item = SExp>,
+    ) -> Result<TopLevelCommand, TopLevelError> {
+        let name = name.to_string();
         let mut args = vec![];
         for expr in exprs {
             match expr {
-                SExp::Integer(value) => args.push(*value),
-                expr => return Err(TopLevelError::IllegalArgumentType(expr.clone())),
+                SExp::Integer(value) => args.push(value),
+                expr => return Err(TopLevelError::IllegalArgumentType(expr)),
             }
         }
-        let name = name.to_string();
         Ok(TopLevelCommand::Call { name, args })
     }
 }
@@ -217,7 +221,7 @@ impl Command {
         }
     }
 
-    fn eval_ex_seq(exprs: Vec<SExp>) -> Result<Vec<Command>, Error> {
+    fn eval_ex_seq(exprs: impl IntoIterator<Item = SExp>) -> Result<Vec<Command>, Error> {
         let mut result = vec![];
         for expr in exprs {
             result.push(Command::eval(expr)?);
@@ -245,7 +249,7 @@ mod test {
     fn eval_top_level(sexp_str: impl AsRef<str>) -> Result<TopLevelCommand, TopLevelError> {
         let sexp = SExpParser::parse_line(sexp_str).expect("unexpected parse error");
         match sexp {
-            SExp::List(exprs) => TopLevelCommand::eval(&exprs[..]),
+            SExp::List(exprs) => TopLevelCommand::eval(exprs),
             _ => panic!("must pass a list to `eval_top_level`"),
         }
     }

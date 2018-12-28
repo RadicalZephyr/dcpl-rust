@@ -61,6 +61,16 @@ pub enum SExp {
     Symbol(String),
 }
 
+impl SExp {
+    pub fn string(content: impl Into<String>) -> SExp {
+        SExp::String(content.into())
+    }
+
+    pub fn symbol(content: impl Into<String>) -> SExp {
+        SExp::Symbol(content.into())
+    }
+}
+
 impl fmt::Display for SExp {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         use self::SExp::*;

@@ -4,6 +4,7 @@ use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use pest_derive::Parser;
 
+use rustyline::error::ReadlineError;
 use rustyline::Editor;
 
 #[derive(Parser)]
@@ -106,7 +107,7 @@ impl Interpreter {
 
     pub fn run(&mut self) {
         println!("Welcome to the {} interpreter!", self.name);
-        self.editor.load_history(&format!("{}.txt", self.name)).ok();
+        self.editor.load_history(&self.history_file_name()).ok();
 
         loop {
             let current_prompt = if self.buffer.is_empty() {
@@ -115,18 +116,39 @@ impl Interpreter {
                 &self.continuation_prompt
             };
 
-            let line = self.editor.readline(current_prompt);
-            let line = line.expect("reading input failed...");
-            self.append_line(line);
+            let line = self
+                .editor
+                .readline_with_initial(current_prompt, (&self.buffer, &""));
+            match line {
+                Ok(line) => {
+                    self.append_line(line);
 
-            match SExpParser::parse_line(&self.buffer) {
-                Ok(sexp) => {
-                    println!("read: {}", sexp);
-                    self.buffer.clear();
+                    match SExpParser::parse_line(&self.buffer) {
+                        Ok(sexp) => {
+                            println!("read: {}", sexp);
+                            self.editor.add_history_entry(self.buffer.as_ref());
+                            self.buffer.clear();
+                        }
+                        Err(_error) => {}
+                    }
                 }
-                Err(_error) => {}
+                Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
+                    break;
+                }
+                Err(err) => {
+                    println!("Error: {:?}", err);
+                    break;
+                }
             }
         }
+
+        self.editor
+            .save_history(&self.history_file_name())
+            .expect("saving history file failed...");
+    }
+
+    fn history_file_name(&self) -> String {
+        format!("{}.txt", self.name)
     }
 
     fn append_line(&mut self, line: String) {

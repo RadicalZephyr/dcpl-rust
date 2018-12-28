@@ -1,19 +1,151 @@
 use dcpl::{Interpreter, SExp};
 
+use std::collections::HashMap;
+
 fn main() {
-    let mut interpreter = Interpreter::new("Postfix", interpret);
+    let mut top_level = TopLevel::default();
+    let mut interpreter = Interpreter::new("Postfix", move |expr| top_level.interpret(expr));
     interpreter.run();
 }
 
-fn interpret(sexp: SExp) -> Option<String> {
-    match sexp {
-        SExp::List(exprs) => top_level_eval(exprs),
-        expr => Some(format!("{}", expr)),
+struct Program {
+    num_args: usize,
+    commands: Vec<Command>,
+}
+
+impl Program {
+    fn apply(&self, args: Vec<i128>) -> Result<i128, TopLevelError> {
+        Err(TopLevelError::Unknown)
     }
 }
 
-fn top_level_eval(_sexp: Vec<SExp>) -> Option<String> {
-    None
+#[derive(Default)]
+struct TopLevel {
+    programs: HashMap<String, Program>,
+}
+
+impl TopLevel {
+    fn interpret(&mut self, sexp: SExp) -> Option<String> {
+        match sexp {
+            SExp::List(exprs) => match TopLevelCommand::eval(&exprs[..]) {
+                Ok(cmd) => match self.apply(cmd) {
+                    Ok(result) => result,
+                    Err(e) => Some(format!("error: {:?}", e)),
+                },
+                Err(e) => Some(format!("Error: {:?}", e)),
+            },
+
+            expr => Some(format!("{}", expr)),
+        }
+    }
+
+    fn apply(&mut self, command: TopLevelCommand) -> Result<Option<String>, TopLevelError> {
+        use self::TopLevelCommand::*;
+        match command {
+            Def {
+                name,
+                num_args,
+                commands,
+            } => {
+                let program = Program { num_args, commands };
+                self.programs.insert(name, program);
+                Ok(None)
+            }
+            Call { name, args } => {
+                let program = self
+                    .programs
+                    .get(&name)
+                    .ok_or_else(|| TopLevelError::ProgramNotFound(name))?;
+                let result = program.apply(args)?;
+                Ok(Some(format!("{}", result)))
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum TopLevelError {
+    Unknown,
+    IllegalArgumentType(SExp),
+    NotASymbol,
+    NotAnInteger,
+    NotEnoughArgs(&'static str),
+    ProgramNotFound(String),
+    EvalError(Error),
+}
+
+impl From<Error> for TopLevelError {
+    fn from(err: Error) -> TopLevelError {
+        TopLevelError::EvalError(err)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum TopLevelCommand {
+    Def {
+        name: String,
+        num_args: usize,
+        commands: Vec<Command>,
+    },
+
+    Call {
+        name: String,
+        args: Vec<i128>,
+    },
+}
+
+impl TopLevelCommand {
+    fn eval(exprs: &[SExp]) -> Result<TopLevelCommand, TopLevelError> {
+        match exprs.first() {
+            Some(SExp::Symbol(name)) => TopLevelCommand::eval_symbol(name, &exprs[1..]),
+            _ => Err(TopLevelError::NotASymbol),
+        }
+    }
+
+    fn eval_symbol(name: &str, rest: &[SExp]) -> Result<TopLevelCommand, TopLevelError> {
+        if name == "def" {
+            TopLevelCommand::def(rest)
+        } else {
+            TopLevelCommand::call(name, rest)
+        }
+    }
+
+    fn def(exprs: &[SExp]) -> Result<TopLevelCommand, TopLevelError> {
+        let name = exprs
+            .first()
+            .cloned()
+            .ok_or_else(|| TopLevelError::NotEnoughArgs("def"))?
+            .into_symbol()
+            .ok_or(TopLevelError::NotASymbol)?;
+        let num_args = exprs
+            .get(1)
+            .cloned()
+            .ok_or_else(|| TopLevelError::NotEnoughArgs("def"))?
+            .into_integer()
+            .ok_or(TopLevelError::NotAnInteger)? as usize;
+        let commands = exprs[2..]
+            .iter()
+            .cloned()
+            .map(Command::eval)
+            .collect::<Result<Vec<Command>, Error>>()?;
+        Ok(TopLevelCommand::Def {
+            name,
+            num_args,
+            commands,
+        })
+    }
+
+    fn call(name: &str, exprs: &[SExp]) -> Result<TopLevelCommand, TopLevelError> {
+        let mut args = vec![];
+        for expr in exprs {
+            match expr {
+                SExp::Integer(value) => args.push(*value),
+                expr => return Err(TopLevelError::IllegalArgumentType(expr.clone())),
+            }
+        }
+        let name = name.to_string();
+        Ok(TopLevelCommand::Call { name, args })
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -96,12 +228,40 @@ enum Error {
 mod test {
     use super::BuiltIn::*;
     use super::Command::*;
+    use super::TopLevelCommand::*;
     use super::*;
 
     use dcpl::SExpParser;
 
+    fn eval_top_level(sexp_str: impl AsRef<str>) -> Result<TopLevelCommand, TopLevelError> {
+        let sexp = SExpParser::parse_line(sexp_str).expect("unexpected parse error");
+        match sexp {
+            SExp::List(exprs) => TopLevelCommand::eval(&exprs[..]),
+            _ => panic!("must pass a list to `eval_top_level`"),
+        }
+    }
+
     fn eval_str(sexp_str: impl AsRef<str>) -> Result<Command, Error> {
         Command::eval(SExpParser::parse_line(sexp_str).expect("unexpected parse error"))
+    }
+
+    #[test]
+    fn test_top_level_eval_def() {
+        let expected = Def {
+            name: "foo".into(),
+            num_args: 2,
+            commands: vec![Integer(4), Integer(7), BuiltIn(Sub)],
+        };
+        assert_eq!(Ok(expected), eval_top_level("(def foo 2 4 7 sub)"))
+    }
+
+    #[test]
+    fn test_top_level_eval_call() {
+        let expected = Call {
+            name: "bar".into(),
+            args: vec![1, 2],
+        };
+        assert_eq!(Ok(expected), eval_top_level("(bar 1 2)"))
     }
 
     #[test]

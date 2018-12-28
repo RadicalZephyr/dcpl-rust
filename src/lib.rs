@@ -138,7 +138,7 @@ pub struct Interpreter<F> {
 
 impl<F> Interpreter<F>
 where
-    F: Fn(SExp) -> Option<String>,
+    F: FnMut(SExp) -> Option<String>,
 {
     pub fn new(name: &'static str, interpret: F) -> Interpreter<F> {
         Interpreter::new_with_prompts(name, format!("{}> ", name.to_lowercase()), "> ", interpret)

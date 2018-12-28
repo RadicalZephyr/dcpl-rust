@@ -1,11 +1,10 @@
-use std::{
-    fmt,
-    io::{self, BufRead, Write},
-};
+use std::fmt;
 
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use pest_derive::Parser;
+
+use rustyline::Editor;
 
 #[derive(Parser)]
 #[grammar = "sexp.pest"]
@@ -79,29 +78,44 @@ impl fmt::Display for SExp {
 }
 
 pub struct Interpreter {
+    name: String,
     prompt: String,
     continuation_prompt: String,
     buffer: String,
+    editor: Editor<()>,
 }
 
 impl Interpreter {
-    pub fn new(prompt: impl Into<String>, continuation_prompt: impl Into<String>) -> Interpreter {
-        let prompt = prompt.into();
-        let continuation_prompt = continuation_prompt.into();
-        let buffer = String::new();
+    pub fn new(name: &'static str) -> Interpreter {
+        Interpreter::new_with_prompts(name, format!("{}> ", name.to_lowercase()), "> ")
+    }
+
+    pub fn new_with_prompts(
+        name: impl Into<String>,
+        prompt: impl Into<String>,
+        continuation_prompt: impl Into<String>,
+    ) -> Interpreter {
         Interpreter {
-            prompt,
-            continuation_prompt,
-            buffer,
+            name: name.into(),
+            prompt: prompt.into(),
+            continuation_prompt: continuation_prompt.into(),
+            buffer: String::new(),
+            editor: Editor::new(),
         }
     }
 
     pub fn run(&mut self) {
-        let stdin_handle = io::stdin();
-        let stdin = stdin_handle.lock();
+        println!("Welcome to the {} interpreter!", self.name);
+        self.editor.load_history(&format!("{}.txt", self.name)).ok();
 
-        self.prompt();
-        for line in stdin.lines() {
+        loop {
+            let current_prompt = if self.buffer.is_empty() {
+                &self.prompt
+            } else {
+                &self.continuation_prompt
+            };
+
+            let line = self.editor.readline(current_prompt);
             let line = line.expect("reading input failed...");
             self.append_line(line);
 
@@ -112,7 +126,6 @@ impl Interpreter {
                 }
                 Err(_error) => {}
             }
-            self.prompt();
         }
     }
 
@@ -122,15 +135,5 @@ impl Interpreter {
         } else {
             self.buffer.push_str(&line);
         }
-    }
-
-    fn prompt(&self) {
-        let prompt = if self.buffer.is_empty() {
-            &self.prompt
-        } else {
-            &self.continuation_prompt
-        };
-        print!("{} ", prompt);
-        io::stdout().lock().flush().ok();
     }
 }

@@ -106,10 +106,11 @@ enum TopLevelCommand {
 impl TopLevelCommand {
     fn eval(exprs: impl IntoIterator<Item = SExp>) -> Result<TopLevelCommand, TopLevelError> {
         let mut exprs = exprs.into_iter();
-        match exprs.next() {
-            Some(SExp::Symbol(name)) => TopLevelCommand::eval_symbol(&name, exprs),
-            _ => Err(TopLevelError::NotASymbol),
-        }
+        exprs
+            .next()
+            .ok_or_else(|| TopLevelError::NotEnoughArgs("()"))
+            .and_then(|expr| expr.into_symbol().ok_or(TopLevelError::NotASymbol))
+            .and_then(|name| TopLevelCommand::eval_symbol(&name, exprs))
     }
 
     fn eval_symbol(
@@ -222,11 +223,7 @@ impl Command {
     }
 
     fn eval_ex_seq(exprs: impl IntoIterator<Item = SExp>) -> Result<Vec<Command>, Error> {
-        let mut result = vec![];
-        for expr in exprs {
-            result.push(Command::eval(expr)?);
-        }
-        Ok(result)
+        exprs.into_iter().map(Command::eval).collect()
     }
 }
 

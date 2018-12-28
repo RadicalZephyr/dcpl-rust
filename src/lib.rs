@@ -34,7 +34,8 @@ impl SExpParser {
     fn parse_rule(pair: Pair<Rule>) -> SExp {
         match pair.as_rule() {
             Rule::list => SExp::List(SExpParser::parse_list(pair.into_inner())),
-            Rule::number => SExp::Number(pair.as_str().parse().unwrap()),
+            Rule::float => SExp::Float(pair.as_str().parse().unwrap()),
+            Rule::integer => SExp::Integer(pair.as_str().parse().unwrap()),
             Rule::string => {
                 let content = pair.as_str();
                 let len = content.len();
@@ -53,7 +54,8 @@ impl SExpParser {
 
 pub enum SExp {
     List(Vec<SExp>),
-    Number(i64),
+    Float(f64),
+    Integer(i128),
     String(String),
     Symbol(String),
 }
@@ -71,7 +73,8 @@ impl fmt::Display for SExp {
                 }
                 write!(f, ")")
             }
-            Number(val) => write!(f, "{}", val),
+            Float(val) => write!(f, "{}", val),
+            Integer(val) => write!(f, "{}", val),
             Symbol(content) => write!(f, "{}", content),
             String(content) => write!(f, "\"{}\"", content),
         }

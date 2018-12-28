@@ -52,6 +52,7 @@ impl SExpParser {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum SExp {
     List(Vec<SExp>),
     Float(f64),
@@ -168,5 +169,68 @@ where
         } else {
             self.buffer.push_str(&line);
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::SExp::*;
+    use super::*;
+
+    fn parse(input: impl AsRef<str>) -> SExp {
+        SExpParser::parse_line(input).expect("unexpected parse error")
+    }
+
+    #[test]
+    fn test_parse_symbol() {
+        assert_eq!(Symbol("world".into()), parse("world"));
+    }
+
+    #[test]
+    fn test_parse_string() {
+        assert_eq!(String("hello".into()), parse("\"hello\""));
+    }
+
+    #[test]
+    fn test_parse_integer() {
+        assert_eq!(Integer(10), parse("10"));
+    }
+
+    #[test]
+    fn test_parse_negative_integer() {
+        assert_eq!(Integer(-5), parse("-5"));
+    }
+
+    #[test]
+    fn test_parse_float() {
+        assert_eq!(Float(1.0), parse("1.0"));
+    }
+
+    #[test]
+    fn test_parse_negative_float() {
+        assert_eq!(Float(-2.0), parse("-2.0"));
+    }
+
+    #[test]
+    fn test_parse_fractional_float() {
+        assert_eq!(Float(0.1), parse("0.1"));
+    }
+
+    #[test]
+    fn test_parse_empty_list() {
+        assert_eq!(List(vec![]), parse("()"));
+    }
+
+    #[test]
+    fn test_parse_singleton_list() {
+        assert_eq!(List(vec![Integer(1)]), parse("(1)"));
+    }
+
+    #[test]
+    fn test_parse_list() {
+        assert_eq!(
+            List(vec![Integer(1), Integer(2), Integer(3)]),
+            parse("(1 2 3)")
+        );
     }
 }

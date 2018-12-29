@@ -4,8 +4,12 @@ use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use pest_derive::Parser;
 
+use rustyline::completion::Completer;
 use rustyline::error::ReadlineError;
-use rustyline::Editor;
+use rustyline::highlight::Highlighter;
+use rustyline::hint::Hinter;
+use rustyline::validate::Validator;
+use rustyline::{Context, Editor, Helper};
 
 #[derive(Parser)]
 #[grammar = "sexp.pest"]
@@ -49,6 +53,35 @@ impl SExpParser {
 
     fn parse_list(pairs: Pairs<Rule>) -> Vec<SExp> {
         pairs.map(SExpParser::parse_rule).collect()
+    }
+}
+
+impl Completer for SExpParser {
+    type Candidate = String;
+
+    fn complete(
+        &self,
+        _line: &str,
+        _pos: usize,
+        _ctx: &Context,
+    ) -> Result<(usize, Vec<String>), ReadlineError> {
+        Ok((0, Vec::with_capacity(0)))
+    }
+}
+
+impl Helper for SExpParser {}
+
+impl Highlighter for SExpParser {}
+
+impl Hinter for SExpParser {
+    fn hint(&self, _line: &str, _pos: usize, _ctx: &Context) -> Option<String> {
+        None
+    }
+}
+
+impl Validator for SExpParser {
+    fn is_valid(&self, line: &str) -> bool {
+        SExpParser::parse_line(line).is_ok()
     }
 }
 
@@ -132,7 +165,7 @@ pub struct Interpreter<F> {
     prompt: String,
     continuation_prompt: String,
     buffer: String,
-    editor: Editor<()>,
+    editor: Editor<SExpParser>,
     interpret: F,
 }
 

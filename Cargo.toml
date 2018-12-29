@@ -7,4 +7,4 @@ edition = "2018"
 [dependencies]
 pest = "2.0"
 pest_derive = "2.0"
-rustyline = "3.0"
+rustyline = { path = "../rustyline" }

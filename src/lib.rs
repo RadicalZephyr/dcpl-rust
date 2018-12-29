@@ -163,8 +163,6 @@ impl fmt::Display for SExp {
 pub struct Interpreter<F> {
     name: String,
     prompt: String,
-    continuation_prompt: String,
-    buffer: String,
     editor: Editor<SExpParser>,
     interpret: F,
 }
@@ -174,20 +172,17 @@ where
     F: FnMut(SExp) -> Option<String>,
 {
     pub fn new(name: &'static str, interpret: F) -> Interpreter<F> {
-        Interpreter::new_with_prompts(name, format!("{}> ", name.to_lowercase()), "> ", interpret)
+        Interpreter::new_with_prompts(name, format!("{}> ", name.to_lowercase()), interpret)
     }
 
     pub fn new_with_prompts(
         name: impl Into<String>,
         prompt: impl Into<String>,
-        continuation_prompt: impl Into<String>,
         interpret: F,
     ) -> Interpreter<F> {
         Interpreter {
             name: name.into(),
             prompt: prompt.into(),
-            continuation_prompt: continuation_prompt.into(),
-            buffer: String::new(),
             editor: Editor::new(),
             interpret,
         }
@@ -195,33 +190,22 @@ where
 
     pub fn run(&mut self) {
         println!("Welcome to the {} interpreter!", self.name);
+        self.editor.set_helper(Some(SExpParser));
         self.editor.load_history(&self.history_file_name()).ok();
 
         loop {
-            let current_prompt = if self.buffer.is_empty() {
-                &self.prompt
-            } else {
-                &self.continuation_prompt
-            };
+            let line = self.editor.readline(&self.prompt);
 
-            let line = self
-                .editor
-                .readline_with_initial(current_prompt, (&self.buffer, &""));
             match line {
-                Ok(line) => {
-                    self.append_line(line);
-
-                    match SExpParser::parse_line(&self.buffer) {
-                        Ok(sexp) => {
-                            if let Some(output) = (self.interpret)(sexp) {
-                                println!("{}", output);
-                            }
-                            self.editor.add_history_entry(self.buffer.as_ref());
-                            self.buffer.clear();
+                Ok(line) => match SExpParser::parse_line(&line) {
+                    Ok(sexp) => {
+                        if let Some(output) = (self.interpret)(sexp) {
+                            println!("{}", output);
                         }
-                        Err(_error) => {}
+                        self.editor.add_history_entry(line.as_ref());
                     }
-                }
+                    Err(error) => println!("Invalid input: {:?}", error),
+                },
                 Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
                     break;
                 }
@@ -239,14 +223,6 @@ where
 
     fn history_file_name(&self) -> String {
         format!("{}.txt", self.name)
-    }
-
-    fn append_line(&mut self, line: String) {
-        if self.buffer.is_empty() {
-            self.buffer = line;
-        } else {
-            self.buffer.push_str(&line);
-        }
     }
 }
 

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use dcpl::SExp;
 
-use crate::parse::{Command, Error};
+use crate::parse::{Command, Error as ParseError};
 use crate::program::Program;
 
 #[derive(Default)]
@@ -25,7 +25,7 @@ impl TopLevel {
         }
     }
 
-    fn apply(&mut self, command: TopLevelCommand) -> Result<Option<String>, TopLevelError> {
+    fn apply(&mut self, command: TopLevelCommand) -> Result<Option<String>, Error> {
         use self::TopLevelCommand::*;
         match command {
             Def {
@@ -41,7 +41,7 @@ impl TopLevel {
                 let program = self
                     .programs
                     .get(&name)
-                    .ok_or_else(|| TopLevelError::ProgramNotFound(name))?;
+                    .ok_or_else(|| Error::ProgramNotFound(name))?;
                 let result = program.apply(args)?;
                 Ok(Some(format!("{}", result)))
             }
@@ -50,7 +50,7 @@ impl TopLevel {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum TopLevelError {
+pub enum Error {
     Unknown,
     IllegalArgumentType(SExp),
     NotASymbol,
@@ -58,12 +58,12 @@ pub enum TopLevelError {
     NotEnoughArgs(&'static str),
     ProgramNotFound(String),
     WrongNumberOfArgs { expected: usize, actual: usize },
-    EvalError(Error),
+    EvalError(ParseError),
 }
 
-impl From<Error> for TopLevelError {
-    fn from(err: Error) -> TopLevelError {
-        TopLevelError::EvalError(err)
+impl From<ParseError> for Error {
+    fn from(err: ParseError) -> Error {
+        Error::EvalError(err)
     }
 }
 
@@ -82,19 +82,19 @@ enum TopLevelCommand {
 }
 
 impl TopLevelCommand {
-    fn eval(exprs: impl IntoIterator<Item = SExp>) -> Result<TopLevelCommand, TopLevelError> {
+    fn eval(exprs: impl IntoIterator<Item = SExp>) -> Result<TopLevelCommand, Error> {
         let mut exprs = exprs.into_iter();
         exprs
             .next()
-            .ok_or_else(|| TopLevelError::NotEnoughArgs("()"))
-            .and_then(|expr| expr.into_symbol().ok_or(TopLevelError::NotASymbol))
+            .ok_or_else(|| Error::NotEnoughArgs("()"))
+            .and_then(|expr| expr.into_symbol().ok_or(Error::NotASymbol))
             .and_then(|name| TopLevelCommand::eval_symbol(&name, exprs))
     }
 
     fn eval_symbol(
         name: &str,
         rest: impl IntoIterator<Item = SExp>,
-    ) -> Result<TopLevelCommand, TopLevelError> {
+    ) -> Result<TopLevelCommand, Error> {
         if name == "def" {
             TopLevelCommand::def(rest)
         } else {
@@ -102,21 +102,21 @@ impl TopLevelCommand {
         }
     }
 
-    fn def(exprs: impl IntoIterator<Item = SExp>) -> Result<TopLevelCommand, TopLevelError> {
+    fn def(exprs: impl IntoIterator<Item = SExp>) -> Result<TopLevelCommand, Error> {
         let mut exprs = exprs.into_iter();
         let name = exprs
             .next()
-            .ok_or_else(|| TopLevelError::NotEnoughArgs("def"))?
+            .ok_or_else(|| Error::NotEnoughArgs("def"))?
             .into_symbol()
-            .ok_or(TopLevelError::NotASymbol)?;
+            .ok_or(Error::NotASymbol)?;
         let num_args = exprs
             .next()
-            .ok_or_else(|| TopLevelError::NotEnoughArgs("def"))?
+            .ok_or_else(|| Error::NotEnoughArgs("def"))?
             .into_integer()
-            .ok_or(TopLevelError::NotAnInteger)? as usize;
+            .ok_or(Error::NotAnInteger)? as usize;
         let commands = exprs
             .map(Command::eval)
-            .collect::<Result<Vec<Command>, Error>>()?;
+            .collect::<Result<Vec<Command>, ParseError>>()?;
         Ok(TopLevelCommand::Def {
             name,
             num_args,
@@ -124,16 +124,13 @@ impl TopLevelCommand {
         })
     }
 
-    fn call(
-        name: &str,
-        exprs: impl IntoIterator<Item = SExp>,
-    ) -> Result<TopLevelCommand, TopLevelError> {
+    fn call(name: &str, exprs: impl IntoIterator<Item = SExp>) -> Result<TopLevelCommand, Error> {
         let name = name.to_string();
         let mut args = vec![];
         for expr in exprs {
             match expr {
                 SExp::Integer(value) => args.push(value),
-                expr => return Err(TopLevelError::IllegalArgumentType(expr)),
+                expr => return Err(Error::IllegalArgumentType(expr)),
             }
         }
         Ok(TopLevelCommand::Call { name, args })
@@ -150,7 +147,7 @@ mod test {
 
     use dcpl::SExpParser;
 
-    fn eval_top_level(sexp_str: impl AsRef<str>) -> Result<TopLevelCommand, TopLevelError> {
+    fn eval_top_level(sexp_str: impl AsRef<str>) -> Result<TopLevelCommand, Error> {
         let sexp = SExpParser::parse_line(sexp_str).expect("unexpected parse error");
         match sexp {
             SExp::List(exprs) => TopLevelCommand::eval(exprs),

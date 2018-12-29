@@ -1,5 +1,5 @@
 use crate::parse::Command;
-use crate::top_level::TopLevelError;
+use crate::top_level::Error as TopLevelError;
 
 pub struct Program {
     num_args: usize,

@@ -17,10 +17,10 @@ enum StackValue {
 }
 
 impl StackValue {
-    pub fn into_integer(self) -> Option<i128> {
+    pub fn into_integer(self) -> Result<i128, Error> {
         match self {
-            StackValue::Integer(value) => Some(value),
-            _ => None,
+            StackValue::Integer(value) => Ok(value),
+            _ => Err(Error::NotANumber),
         }
     }
 }
@@ -86,12 +86,10 @@ macro_rules! arith_op {
     { $stack:ident, $op:tt } => {{
         let v1 = $stack
             .pop()?
-            .into_integer()
-            .ok_or(Error::NotANumber)?;
+            .into_integer()?;
         let v2 = $stack
             .pop()?
-            .into_integer()
-            .ok_or(Error::NotANumber)?;
+            .into_integer()?;
 
         $stack.push(StackValue::Integer(v2 $op v1));
         Ok($stack)
@@ -102,12 +100,10 @@ macro_rules! bool_op {
     { $stack:ident, $op:tt } => {{
         let v1 = $stack
             .pop()?
-            .into_integer()
-            .ok_or(Error::NotANumber)?;
+            .into_integer()?;
         let v2 = $stack
             .pop()?
-            .into_integer()
-            .ok_or(Error::NotANumber)?;
+            .into_integer()?;
 
         $stack.push(StackValue::Integer(if v2 $op v1 {1} else {0}));
         Ok($stack)

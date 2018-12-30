@@ -360,4 +360,26 @@ mod test {
         let stack = Stack(vec![StackValue::Integer(3), ex_seq]);
         assert_eq!(Ok(stack![6]), Program::apply_builtin(stack, &BuiltIn::Exec))
     }
+
+    macro_rules! command {
+        { ( $( $command:tt )* ) } => { vec![ $( command!($command) )* ] };
+        { $command:expr } => { Command::from($command) };
+    }
+
+    macro_rules! postfix_test {
+        { $name:ident : (postfix $num_args:tt $( $command:tt )* ) [$( $args:expr ),*] -> $expected:expr } => {
+            #[test]
+            fn $name() {
+                #[allow(unused_imports)]
+                use crate::read::BuiltIn::*;
+                let commands = vec![ $( command!( $command ) ),* ];
+                let program = Program::new($num_args, commands);
+                let args: Vec<i128> = vec![ $($args),* ];
+                assert_eq!($expected, program.apply(args));
+            }
+        }
+    }
+
+    postfix_test!(test_return_top: (postfix 0 1 2 3) [] -> Ok(3));
+    postfix_test!(test_3_minus_4: (postfix 1 4 Sub) [3] -> Ok(-1));
 }

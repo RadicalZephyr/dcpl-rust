@@ -8,6 +8,7 @@ pub enum Error {
     FinalValueNotAnInteger,
     NotEnoughValues,
     NotANumber,
+    NotAnExecutableSequence,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -28,6 +29,13 @@ impl StackValue {
         match self {
             StackValue::Integer(value) => Ok(value),
             _ => Err(Error::NotANumber),
+        }
+    }
+
+    pub fn into_ex_seq(self) -> Result<Vec<Command>, Error> {
+        match self {
+            StackValue::ExecutableSequence(inner) => Ok(inner),
+            _ => Err(Error::NotAnExecutableSequence),
         }
     }
 }
@@ -83,6 +91,11 @@ impl Stack {
         vi.assert_integer()?;
         self.push(vi.clone());
         Ok(self)
+    }
+
+    pub fn exec(self, commands: Vec<Command>) -> Result<Stack, Error> {
+        let result = commands.iter().try_fold(self, Program::apply_command)?;
+        Ok(result)
     }
 }
 
@@ -198,7 +211,10 @@ impl Program {
                 Ok(stack)
             }
             Nget => stack.nget(),
-            Exec => Ok(stack),
+            Exec => {
+                let top = stack.pop()?;
+                stack.exec(top.into_ex_seq()?)
+            }
         }
     }
 }
@@ -327,5 +343,21 @@ mod test {
             Ok(stack![4, 4]),
             Program::apply_builtin(stack![4, 1], &BuiltIn::Nget)
         )
+    }
+
+    #[test]
+    fn test_exec_number() {
+        assert_eq!(
+            Err(Error::NotAnExecutableSequence),
+            Program::apply_builtin(stack![1], &BuiltIn::Exec)
+        )
+    }
+
+    #[test]
+    fn test_exec() {
+        let ex_seq: StackValue =
+            StackValue::from(vec![Command::Integer(2), Command::BuiltIn(BuiltIn::Mul)]);
+        let stack = Stack(vec![StackValue::Integer(3), ex_seq]);
+        assert_eq!(Ok(stack![6]), Program::apply_builtin(stack, &BuiltIn::Exec))
     }
 }

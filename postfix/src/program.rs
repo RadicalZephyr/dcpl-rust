@@ -101,17 +101,17 @@ impl Program {
         use crate::parse::BuiltIn::*;
         match builtin {
             Add => arith_op!(stack, +),
-            Div => Ok(stack),
+            Sub => arith_op!(stack, -),
+            Mul => arith_op!(stack, *),
+            Div => arith_op!(stack, /),
+            Rem => arith_op!(stack, %),
             Eq => Ok(stack),
             Exec => Ok(stack),
             Gt => Ok(stack),
             Lt => Ok(stack),
-            Mul => Ok(stack),
             Nget => Ok(stack),
             Pop => Ok(stack),
-            Rem => Ok(stack),
             Sel => Ok(stack),
-            Sub => Ok(stack),
             Swap => Ok(stack),
         }
     }

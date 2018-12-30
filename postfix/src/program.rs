@@ -5,7 +5,6 @@ use crate::top_level::Error as TopLevelError;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
-    FinalValueNotAnInteger,
     NotEnoughValues,
     NotANumber,
     NotAnExecutableSequence,
@@ -162,9 +161,7 @@ impl Program {
             .try_fold(stack, Program::apply_command)?;
         match final_stack.pop()? {
             StackValue::Integer(value) => Ok(value),
-            StackValue::ExecutableSequence(_) => {
-                Err(TopLevelError::from(Error::FinalValueNotAnInteger))
-            }
+            StackValue::ExecutableSequence(_) => Err(TopLevelError::FinalValueNotAnInteger),
         }
     }
 

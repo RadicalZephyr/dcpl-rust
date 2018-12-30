@@ -72,6 +72,7 @@ impl TopLevel {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
     IllegalArgumentType(SExp),
+    FinalValueNotAnInteger,
     NotASymbol,
     NotAnInteger,
     NotEnoughArgs(&'static str),

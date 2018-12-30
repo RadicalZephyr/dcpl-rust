@@ -380,6 +380,15 @@ mod test {
         }
     }
 
-    postfix_test!(test_return_top: (postfix 0 1 2 3) [] -> Ok(3));
-    postfix_test!(test_3_minus_4: (postfix 1 4 Sub) [3] -> Ok(-1));
+    postfix_test!(test_pf_return_top: (postfix 0 1 2 3) [] -> Ok(3));
+    postfix_test!(test_pf_pop: (postfix 0 1 2 3 Pop) [] -> Ok(2));
+    postfix_test!(test_pf_swap_pop: (postfix 0 1 2 Swap 3 Pop) [] -> Ok(1));
+    postfix_test!(test_pf_swap_error: (postfix 0 1 Swap) [] -> Err(Error::NotEnoughValues.into()));
+    postfix_test!(test_pf_pop_error: (postfix 0 1 Pop Pop) [] -> Err(Error::NotEnoughValues.into()));
+
+    postfix_test!(test_pf_too_few_args: (postfix 2 Swap) [3] -> Err(TopLevelError::wrong_number(2, 1)));
+    postfix_test!(test_pf_too_many_args: (postfix 1 Pop) [4, 5] -> Err(TopLevelError::wrong_number(1, 2)));
+
+    postfix_test!(test_pf_3_minus_4: (postfix 1 4 Sub) [3] -> Ok(-1));
+
 }

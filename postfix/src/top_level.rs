@@ -81,6 +81,12 @@ pub enum Error {
     ProgramError(ProgramError),
 }
 
+impl Error {
+    pub fn wrong_number(expected: usize, actual: usize) -> Error {
+        Error::WrongNumberOfArgs { expected, actual }
+    }
+}
+
 impl From<ParseError> for Error {
     fn from(err: ParseError) -> Error {
         Error::ReadError(err)

@@ -3,14 +3,34 @@ use std::collections::HashMap;
 use dcpl::SExp;
 
 use crate::program::{Error as ProgramError, Program};
-use crate::read::{Command, Error as ParseError};
+use crate::read::{BuiltIn, Command, Error as ParseError};
 
-#[derive(Default)]
 pub struct TopLevel {
     programs: HashMap<String, Program>,
 }
 
+macro_rules! builtin_program {
+    { $programs:ident[$name:expr] = $builtin:path : $arg_count:expr } => {
+        $programs.insert(
+            $name.into(),
+            Program::new($arg_count, vec![Command::BuiltIn($builtin)]),
+        );
+    };
+}
+
 impl TopLevel {
+    pub fn new() -> TopLevel {
+        let mut programs = HashMap::new();
+        builtin_program!(programs["add"] = BuiltIn::Add : 2);
+        builtin_program!(programs["sub"] = BuiltIn::Sub : 2);
+        builtin_program!(programs["mul"] = BuiltIn::Mul : 2);
+        builtin_program!(programs["div"] = BuiltIn::Div : 2);
+        builtin_program!(programs["eq"] = BuiltIn::Eq : 2);
+        builtin_program!(programs["lt"] = BuiltIn::Lt : 2);
+        builtin_program!(programs["gt"] = BuiltIn::Gt : 2);
+        TopLevel { programs }
+    }
+
     pub fn interpret(&mut self, sexp: SExp) -> Option<String> {
         match sexp {
             SExp::List(exprs) => match TopLevelCommand::read(exprs) {

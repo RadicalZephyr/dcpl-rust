@@ -57,6 +57,14 @@ impl Stack {
     pub fn push(&mut self, value: StackValue) {
         self.0.push(value);
     }
+
+    pub fn swap(mut self) -> Result<Stack, Error> {
+        let v1 = self.pop()?;
+        let v2 = self.pop()?;
+        self.push(v1);
+        self.push(v2);
+        Ok(self)
+    }
 }
 
 impl FromIterator<StackValue> for Stack {
@@ -162,10 +170,10 @@ impl Program {
                 stack.pop()?;
                 Ok(stack)
             }
+            Swap => stack.swap(),
             Exec => Ok(stack),
             Nget => Ok(stack),
             Sel => Ok(stack),
-            Swap => Ok(stack),
         }
     }
 }
@@ -237,5 +245,28 @@ mod test {
             Program::apply_builtin(stack![1, 2], &BuiltIn::Pop)
         );
     }
+
+    #[test]
+    fn test_swap_empty() {
+        assert_eq!(
+            Err(Error::NotEnoughValues),
+            Program::apply_builtin(stack![], &BuiltIn::Swap)
+        );
+    }
+
+    #[test]
+    fn test_swap_one() {
+        assert_eq!(
+            Err(Error::NotEnoughValues),
+            Program::apply_builtin(stack![1], &BuiltIn::Swap)
+        );
+    }
+
+    #[test]
+    fn test_swap() {
+        assert_eq!(
+            Ok(stack![1, 9]),
+            Program::apply_builtin(stack![9, 1], &BuiltIn::Swap)
+        )
     }
 }

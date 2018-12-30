@@ -17,6 +17,13 @@ enum StackValue {
 }
 
 impl StackValue {
+    pub fn assert_integer(&self) -> Result<(), Error> {
+        match self {
+            StackValue::Integer(_) => Ok(()),
+            _ => Err(Error::NotANumber),
+        }
+    }
+
     pub fn into_integer(self) -> Result<i128, Error> {
         match self {
             StackValue::Integer(value) => Ok(value),
@@ -63,6 +70,18 @@ impl Stack {
         let v2 = self.pop()?;
         self.push(v1);
         self.push(v2);
+        Ok(self)
+    }
+
+    pub fn nget(mut self) -> Result<Stack, Error> {
+        let vindex = self.pop()?.into_integer()?;
+        let len = self.0.len();
+        let vi = self
+            .0
+            .get(len - vindex as usize)
+            .ok_or(Error::NotEnoughValues)?;
+        vi.assert_integer()?;
+        self.push(vi.clone());
         Ok(self)
     }
 }
@@ -178,8 +197,8 @@ impl Program {
                 }
                 Ok(stack)
             }
+            Nget => stack.nget(),
             Exec => Ok(stack),
-            Nget => Ok(stack),
         }
     }
 }
@@ -289,6 +308,24 @@ mod test {
         assert_eq!(
             Ok(stack![2]),
             Program::apply_builtin(stack![1, 2, 3], &BuiltIn::Sel)
+        )
+    }
+
+    #[test]
+    fn test_nget_exec_seq() {
+        let ex_seq: StackValue = StackValue::from(vec![Command::Integer(1)]);
+        let stack = Stack(vec![ex_seq, StackValue::Integer(1)]);
+        assert_eq!(
+            Err(Error::NotANumber),
+            Program::apply_builtin(stack, &BuiltIn::Nget)
+        )
+    }
+
+    #[test]
+    fn test_nget() {
+        assert_eq!(
+            Ok(stack![4, 4]),
+            Program::apply_builtin(stack![4, 1], &BuiltIn::Nget)
         )
     }
 }

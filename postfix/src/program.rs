@@ -7,12 +7,23 @@ use crate::top_level::Error as TopLevelError;
 pub enum Error {
     EmptyFinalStack,
     FinalValueNotAnInteger,
+    NotEnoughValues,
+    NotANumber,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 enum StackValue {
     ExecutableSequence(Vec<Command>),
     Integer(i128),
+}
+
+impl StackValue {
+    pub fn into_integer(self) -> Option<i128> {
+        match self {
+            StackValue::Integer(value) => Some(value),
+            _ => None,
+        }
+    }
 }
 
 type Stack = Vec<StackValue>;
@@ -89,7 +100,21 @@ impl Program {
     fn apply_builtin(mut stack: Stack, builtin: &BuiltIn) -> Result<Stack, Error> {
         use crate::parse::BuiltIn::*;
         match builtin {
-            Add => Ok(stack),
+            Add => {
+                let v1 = stack
+                    .pop()
+                    .ok_or(Error::NotEnoughValues)?
+                    .into_integer()
+                    .ok_or(Error::NotANumber)?;
+                let v2 = stack
+                    .pop()
+                    .ok_or(Error::NotEnoughValues)?
+                    .into_integer()
+                    .ok_or(Error::NotANumber)?;
+
+                stack.push(StackValue::Integer(v2 + v1));
+                Ok(stack)
+            }
             Div => Ok(stack),
             Eq => Ok(stack),
             Exec => Ok(stack),

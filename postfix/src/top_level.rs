@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use dcpl::SExp;
 
-use crate::parse::{Command, Error as ParseError};
 use crate::program::{Error as ProgramError, Program};
+use crate::read::{Command, Error as ParseError};
 
 #[derive(Default)]
 pub struct TopLevel {
@@ -148,8 +148,8 @@ mod test {
     use super::TopLevelCommand::*;
     use super::*;
 
-    use crate::parse::BuiltIn::*;
-    use crate::parse::Command::*;
+    use crate::read::BuiltIn::*;
+    use crate::read::Command::*;
 
     use dcpl::SExpParser;
 

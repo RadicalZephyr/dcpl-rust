@@ -1,6 +1,6 @@
 use std::iter::FromIterator;
 
-use crate::parse::{BuiltIn, Command};
+use crate::read::{BuiltIn, Command};
 use crate::top_level::Error as TopLevelError;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -119,7 +119,7 @@ impl Program {
     }
 
     fn apply_command(mut stack: Stack, command: &Command) -> Result<Stack, Error> {
-        use crate::parse::Command::*;
+        use crate::read::Command::*;
         match command {
             Integer(inner) => {
                 stack.push(StackValue::from(*inner));
@@ -134,7 +134,7 @@ impl Program {
     }
 
     fn apply_builtin(mut stack: Stack, builtin: &BuiltIn) -> Result<Stack, Error> {
-        use crate::parse::BuiltIn::*;
+        use crate::read::BuiltIn::*;
         match builtin {
             Add => arith_op!(stack, +),
             Sub => arith_op!(stack, -),

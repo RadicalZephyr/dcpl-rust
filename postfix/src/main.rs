@@ -1,7 +1,7 @@
 use dcpl::Interpreter;
 
-mod parse;
 mod program;
+mod read;
 mod top_level;
 
 use crate::top_level::TopLevel;

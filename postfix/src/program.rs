@@ -61,7 +61,6 @@ impl Program {
         let mut final_stack = self
             .commands
             .iter()
-            .cloned()
             .try_fold(stack, Program::apply_command)?;
         match final_stack.pop() {
             Some(StackValue::Integer(value)) => Ok(value),
@@ -72,21 +71,21 @@ impl Program {
         }
     }
 
-    fn apply_command(mut stack: Stack, command: Command) -> Result<Stack, Error> {
+    fn apply_command(mut stack: Stack, command: &Command) -> Result<Stack, Error> {
         match command {
             Command::Integer(inner) => {
-                stack.push(StackValue::from(inner));
+                stack.push(StackValue::from(*inner));
                 Ok(stack)
             }
             Command::ExecutableSequence(inner) => {
-                stack.push(StackValue::from(inner));
+                stack.push(inner.iter().cloned().collect());
                 Ok(stack)
             }
             Command::BuiltIn(builtin) => Program::apply_builtin(stack, builtin),
         }
     }
 
-    fn apply_builtin(mut stack: Stack, builtin: BuiltIn) -> Result<Stack, Error> {
+    fn apply_builtin(mut stack: Stack, builtin: &BuiltIn) -> Result<Stack, Error> {
         use crate::parse::BuiltIn::*;
         match builtin {
             Add => Ok(stack),

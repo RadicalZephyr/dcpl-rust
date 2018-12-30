@@ -18,7 +18,7 @@ pub enum BuiltIn {
 }
 
 impl BuiltIn {
-    pub fn eval(name: String) -> Result<BuiltIn, Error> {
+    pub fn read(name: String) -> Result<BuiltIn, Error> {
         use self::BuiltIn::*;
         match name.as_ref() {
             "add" => Ok(Add),
@@ -48,20 +48,20 @@ pub enum Command {
 }
 
 impl Command {
-    pub fn eval(sexp: SExp) -> Result<Command, Error> {
+    pub fn read(sexp: SExp) -> Result<Command, Error> {
         use dcpl::SExp::*;
         match sexp {
-            List(exprs) => Ok(Command::ExecutableSequence(Command::eval_ex_seq(exprs)?)),
+            List(exprs) => Ok(Command::ExecutableSequence(Command::read_ex_seq(exprs)?)),
             Integer(val) => Ok(Command::Integer(val)),
-            Symbol(name) => Ok(Command::BuiltIn(BuiltIn::eval(name)?)),
+            Symbol(name) => Ok(Command::BuiltIn(BuiltIn::read(name)?)),
 
             Float(_) => Err(Error::UsingFloat),
             String(_) => Err(Error::UsingString),
         }
     }
 
-    fn eval_ex_seq(exprs: impl IntoIterator<Item = SExp>) -> Result<Vec<Command>, Error> {
-        exprs.into_iter().map(Command::eval).collect()
+    fn read_ex_seq(exprs: impl IntoIterator<Item = SExp>) -> Result<Vec<Command>, Error> {
+        exprs.into_iter().map(Command::read).collect()
     }
 }
 
@@ -80,84 +80,84 @@ mod test {
 
     use dcpl::SExpParser;
 
-    fn eval_str(sexp_str: impl AsRef<str>) -> Result<Command, Error> {
-        Command::eval(SExpParser::parse_line(sexp_str).expect("unexpected parse error"))
+    fn read_str(sexp_str: impl AsRef<str>) -> Result<Command, Error> {
+        Command::read(SExpParser::parse_line(sexp_str).expect("unexpected parse error"))
     }
 
     #[test]
-    fn test_eval_executable_sequence() {
+    fn test_read_executable_sequence() {
         assert_eq!(
             Ok(ExecutableSequence(vec![Integer(1), Integer(2), Integer(3)])),
-            eval_str("(1 2 3)")
+            read_str("(1 2 3)")
         )
     }
 
     #[test]
-    fn test_eval_integer() {
-        assert_eq!(Ok(Integer(10)), eval_str("10"));
+    fn test_read_integer() {
+        assert_eq!(Ok(Integer(10)), read_str("10"));
     }
 
     #[test]
-    fn test_eval_add() {
-        assert_eq!(Ok(BuiltIn(Add)), eval_str("add"));
+    fn test_read_add() {
+        assert_eq!(Ok(BuiltIn(Add)), read_str("add"));
     }
 
     #[test]
-    fn test_eval_div() {
-        assert_eq!(Ok(BuiltIn(Div)), eval_str("div"));
+    fn test_read_div() {
+        assert_eq!(Ok(BuiltIn(Div)), read_str("div"));
     }
     #[test]
-    fn test_eval_eq() {
-        assert_eq!(Ok(BuiltIn(Eq)), eval_str("eq"));
+    fn test_read_eq() {
+        assert_eq!(Ok(BuiltIn(Eq)), read_str("eq"));
     }
     #[test]
-    fn test_eval_exec() {
-        assert_eq!(Ok(BuiltIn(Exec)), eval_str("exec"));
+    fn test_read_exec() {
+        assert_eq!(Ok(BuiltIn(Exec)), read_str("exec"));
     }
     #[test]
-    fn test_eval_gt() {
-        assert_eq!(Ok(BuiltIn(Gt)), eval_str("gt"));
+    fn test_read_gt() {
+        assert_eq!(Ok(BuiltIn(Gt)), read_str("gt"));
     }
     #[test]
-    fn test_eval_lt() {
-        assert_eq!(Ok(BuiltIn(Lt)), eval_str("lt"));
+    fn test_read_lt() {
+        assert_eq!(Ok(BuiltIn(Lt)), read_str("lt"));
     }
     #[test]
-    fn test_eval_mul() {
-        assert_eq!(Ok(BuiltIn(Mul)), eval_str("mul"));
+    fn test_read_mul() {
+        assert_eq!(Ok(BuiltIn(Mul)), read_str("mul"));
     }
     #[test]
-    fn test_eval_nget() {
-        assert_eq!(Ok(BuiltIn(Nget)), eval_str("nget"));
+    fn test_read_nget() {
+        assert_eq!(Ok(BuiltIn(Nget)), read_str("nget"));
     }
     #[test]
-    fn test_eval_pop() {
-        assert_eq!(Ok(BuiltIn(Pop)), eval_str("pop"));
+    fn test_read_pop() {
+        assert_eq!(Ok(BuiltIn(Pop)), read_str("pop"));
     }
     #[test]
-    fn test_eval_rem() {
-        assert_eq!(Ok(BuiltIn(Rem)), eval_str("rem"));
+    fn test_read_rem() {
+        assert_eq!(Ok(BuiltIn(Rem)), read_str("rem"));
     }
     #[test]
-    fn test_eval_sel() {
-        assert_eq!(Ok(BuiltIn(Sel)), eval_str("sel"));
+    fn test_read_sel() {
+        assert_eq!(Ok(BuiltIn(Sel)), read_str("sel"));
     }
     #[test]
-    fn test_eval_sub() {
-        assert_eq!(Ok(BuiltIn(Sub)), eval_str("sub"));
+    fn test_read_sub() {
+        assert_eq!(Ok(BuiltIn(Sub)), read_str("sub"));
     }
     #[test]
-    fn test_eval_swap() {
-        assert_eq!(Ok(BuiltIn(Swap)), eval_str("swap"));
-    }
-
-    #[test]
-    fn test_eval_float() {
-        assert_eq!(Err(Error::UsingFloat), eval_str("10.0"));
+    fn test_read_swap() {
+        assert_eq!(Ok(BuiltIn(Swap)), read_str("swap"));
     }
 
     #[test]
-    fn test_eval_string() {
-        assert_eq!(Err(Error::UsingString), eval_str("\"hello\""));
+    fn test_read_float() {
+        assert_eq!(Err(Error::UsingFloat), read_str("10.0"));
+    }
+
+    #[test]
+    fn test_read_string() {
+        assert_eq!(Err(Error::UsingString), read_str("\"hello\""));
     }
 }

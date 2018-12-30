@@ -13,7 +13,7 @@ pub struct TopLevel {
 impl TopLevel {
     pub fn interpret(&mut self, sexp: SExp) -> Option<String> {
         match sexp {
-            SExp::List(exprs) => match TopLevelCommand::eval(exprs) {
+            SExp::List(exprs) => match TopLevelCommand::read(exprs) {
                 Ok(cmd) => match self.apply(cmd) {
                     Ok(result) => result,
                     Err(e) => Some(format!("error: {:?}", e)),
@@ -58,12 +58,12 @@ pub enum Error {
     NotEnoughArgs(&'static str),
     ProgramNotFound(String),
     WrongNumberOfArgs { expected: usize, actual: usize },
-    EvalError(ParseError),
+    ReadError(ParseError),
 }
 
 impl From<ParseError> for Error {
     fn from(err: ParseError) -> Error {
-        Error::EvalError(err)
+        Error::ReadError(err)
     }
 }
 
@@ -82,16 +82,16 @@ enum TopLevelCommand {
 }
 
 impl TopLevelCommand {
-    fn eval(exprs: impl IntoIterator<Item = SExp>) -> Result<TopLevelCommand, Error> {
+    fn read(exprs: impl IntoIterator<Item = SExp>) -> Result<TopLevelCommand, Error> {
         let mut exprs = exprs.into_iter();
         exprs
             .next()
             .ok_or_else(|| Error::NotEnoughArgs("()"))
             .and_then(|expr| expr.into_symbol().ok_or(Error::NotASymbol))
-            .and_then(|name| TopLevelCommand::eval_symbol(&name, exprs))
+            .and_then(|name| TopLevelCommand::read_symbol(&name, exprs))
     }
 
-    fn eval_symbol(
+    fn read_symbol(
         name: &str,
         rest: impl IntoIterator<Item = SExp>,
     ) -> Result<TopLevelCommand, Error> {
@@ -115,7 +115,7 @@ impl TopLevelCommand {
             .into_integer()
             .ok_or(Error::NotAnInteger)? as usize;
         let commands = exprs
-            .map(Command::eval)
+            .map(Command::read)
             .collect::<Result<Vec<Command>, ParseError>>()?;
         Ok(TopLevelCommand::Def {
             name,
@@ -147,30 +147,30 @@ mod test {
 
     use dcpl::SExpParser;
 
-    fn eval_top_level(sexp_str: impl AsRef<str>) -> Result<TopLevelCommand, Error> {
+    fn read_top_level(sexp_str: impl AsRef<str>) -> Result<TopLevelCommand, Error> {
         let sexp = SExpParser::parse_line(sexp_str).expect("unexpected parse error");
         match sexp {
-            SExp::List(exprs) => TopLevelCommand::eval(exprs),
-            _ => panic!("must pass a list to `eval_top_level`"),
+            SExp::List(exprs) => TopLevelCommand::read(exprs),
+            _ => panic!("must pass a list to `read_top_level`"),
         }
     }
 
     #[test]
-    fn test_top_level_eval_def() {
+    fn test_top_level_read_def() {
         let expected = Def {
             name: "foo".into(),
             num_args: 2,
             commands: vec![Integer(4), Integer(7), BuiltIn(Sub)],
         };
-        assert_eq!(Ok(expected), eval_top_level("(def foo 2 4 7 sub)"))
+        assert_eq!(Ok(expected), read_top_level("(def foo 2 4 7 sub)"))
     }
 
     #[test]
-    fn test_top_level_eval_call() {
+    fn test_top_level_read_call() {
         let expected = Call {
             name: "bar".into(),
             args: vec![1, 2],
         };
-        assert_eq!(Ok(expected), eval_top_level("(bar 1 2)"))
+        assert_eq!(Ok(expected), read_top_level("(bar 1 2)"))
     }
 }

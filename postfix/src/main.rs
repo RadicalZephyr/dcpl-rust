@@ -1,7 +1,5 @@
 use dcpl::Interpreter;
 
-#[macro_use]
-mod macros;
 mod parse;
 mod program;
 mod top_level;

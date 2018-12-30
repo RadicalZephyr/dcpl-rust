@@ -232,7 +232,10 @@ mod test {
 
     #[test]
     fn test_pop() {
-        let stack = stack![1, 2];
-        assert_eq!(Ok(stack![1]), Program::apply_builtin(stack, &BuiltIn::Pop));
+        assert_eq!(
+            Ok(stack![1]),
+            Program::apply_builtin(stack![1, 2], &BuiltIn::Pop)
+        );
+    }
     }
 }

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use dcpl::SExp;
 
 use crate::parse::{Command, Error as ParseError};
-use crate::program::Program;
+use crate::program::{Error as ProgramError, Program};
 
 #[derive(Default)]
 pub struct TopLevel {
@@ -51,7 +51,6 @@ impl TopLevel {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
-    Unknown,
     IllegalArgumentType(SExp),
     NotASymbol,
     NotAnInteger,
@@ -59,11 +58,18 @@ pub enum Error {
     ProgramNotFound(String),
     WrongNumberOfArgs { expected: usize, actual: usize },
     ReadError(ParseError),
+    ProgramError(ProgramError),
 }
 
 impl From<ParseError> for Error {
     fn from(err: ParseError) -> Error {
         Error::ReadError(err)
+    }
+}
+
+impl From<ProgramError> for Error {
+    fn from(err: ProgramError) -> Error {
+        Error::ProgramError(err)
     }
 }
 

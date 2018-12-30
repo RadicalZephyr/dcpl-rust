@@ -4,7 +4,10 @@ use crate::parse::{BuiltIn, Command};
 use crate::top_level::Error as TopLevelError;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Error {}
+pub enum Error {
+    EmptyFinalStack,
+    FinalValueNotAnInteger,
+}
 
 #[derive(Clone, Debug, PartialEq)]
 enum StackValue {
@@ -55,7 +58,18 @@ impl Program {
             });
         }
         let stack: Stack = args.into_iter().rev().map(StackValue::from).collect();
-        Err(TopLevelError::Unknown)
+        let mut final_stack = self
+            .commands
+            .iter()
+            .cloned()
+            .try_fold(stack, Program::apply_command)?;
+        match final_stack.pop() {
+            Some(StackValue::Integer(value)) => Ok(value),
+            Some(StackValue::ExecutableSequence(_)) => {
+                Err(TopLevelError::from(Error::FinalValueNotAnInteger))
+            }
+            None => Err(TopLevelError::from(Error::EmptyFinalStack)),
+        }
     }
 
     fn apply_command(mut stack: Stack, command: Command) -> Result<Stack, Error> {
@@ -73,6 +87,21 @@ impl Program {
     }
 
     fn apply_builtin(mut stack: Stack, builtin: BuiltIn) -> Result<Stack, Error> {
-        Ok(stack)
+        use crate::parse::BuiltIn::*;
+        match builtin {
+            Add => Ok(stack),
+            Div => Ok(stack),
+            Eq => Ok(stack),
+            Exec => Ok(stack),
+            Gt => Ok(stack),
+            Lt => Ok(stack),
+            Mul => Ok(stack),
+            Nget => Ok(stack),
+            Pop => Ok(stack),
+            Rem => Ok(stack),
+            Sel => Ok(stack),
+            Sub => Ok(stack),
+            Swap => Ok(stack),
+        }
     }
 }

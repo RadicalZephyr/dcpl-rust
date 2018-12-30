@@ -5,7 +5,6 @@ use crate::top_level::Error as TopLevelError;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
-    EmptyFinalStack,
     FinalValueNotAnInteger,
     NotEnoughValues,
     NotANumber,
@@ -25,8 +24,6 @@ impl StackValue {
         }
     }
 }
-
-type Stack = Vec<StackValue>;
 
 impl FromIterator<Command> for StackValue {
     fn from_iter<T>(iter: T) -> Self
@@ -49,6 +46,28 @@ impl From<i128> for StackValue {
     }
 }
 
+#[derive(Debug, PartialEq)]
+struct Stack(Vec<StackValue>);
+
+impl Stack {
+    pub fn pop(&mut self) -> Result<StackValue, Error> {
+        self.0.pop().ok_or(Error::NotEnoughValues)
+    }
+
+    pub fn push(&mut self, value: StackValue) {
+        self.0.push(value);
+    }
+}
+
+impl FromIterator<StackValue> for Stack {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = StackValue>,
+    {
+        Stack(iter.into_iter().collect())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Program {
     num_args: usize,
@@ -58,13 +77,11 @@ pub struct Program {
 macro_rules! arith_op {
     { $stack:ident, $op:tt } => {{
         let v1 = $stack
-            .pop()
-            .ok_or(Error::NotEnoughValues)?
+            .pop()?
             .into_integer()
             .ok_or(Error::NotANumber)?;
         let v2 = $stack
-            .pop()
-            .ok_or(Error::NotEnoughValues)?
+            .pop()?
             .into_integer()
             .ok_or(Error::NotANumber)?;
 
@@ -76,13 +93,11 @@ macro_rules! arith_op {
 macro_rules! bool_op {
     { $stack:ident, $op:tt } => {{
         let v1 = $stack
-            .pop()
-            .ok_or(Error::NotEnoughValues)?
+            .pop()?
             .into_integer()
             .ok_or(Error::NotANumber)?;
         let v2 = $stack
-            .pop()
-            .ok_or(Error::NotEnoughValues)?
+            .pop()?
             .into_integer()
             .ok_or(Error::NotANumber)?;
 
@@ -109,12 +124,11 @@ impl Program {
             .commands
             .iter()
             .try_fold(stack, Program::apply_command)?;
-        match final_stack.pop() {
-            Some(StackValue::Integer(value)) => Ok(value),
-            Some(StackValue::ExecutableSequence(_)) => {
+        match final_stack.pop()? {
+            StackValue::Integer(value) => Ok(value),
+            StackValue::ExecutableSequence(_) => {
                 Err(TopLevelError::from(Error::FinalValueNotAnInteger))
             }
-            None => Err(TopLevelError::from(Error::EmptyFinalStack)),
         }
     }
 
@@ -144,9 +158,12 @@ impl Program {
             Eq => bool_op!(stack, ==),
             Gt => bool_op!(stack, >),
             Lt => bool_op!(stack, <),
+            Pop => {
+                stack.pop()?;
+                Ok(stack)
+            }
             Exec => Ok(stack),
             Nget => Ok(stack),
-            Pop => Ok(stack),
             Sel => Ok(stack),
             Swap => Ok(stack),
         }
@@ -159,8 +176,8 @@ mod test {
 
     macro_rules! stack {
         { $($val:expr),* }=> {{
-            let v = vec![ $($val),* ];
-            v.into_iter().map(StackValue::from).collect::<Vec<StackValue>>()
+            let v: Vec<i128> = vec![ $($val),* ];
+            v.into_iter().map(StackValue::from).collect::<Stack>()
         }}
     }
 
@@ -205,4 +222,17 @@ mod test {
     bool_op_test!(test_lt: BuiltIn::Lt => [1, 2] -> true);
     bool_op_test!(test_not_lt: BuiltIn::Lt => [2, 1] -> false);
 
+    #[test]
+    fn test_pop_empty() {
+        assert_eq!(
+            Err(Error::NotEnoughValues),
+            Program::apply_builtin(stack![], &BuiltIn::Pop)
+        );
+    }
+
+    #[test]
+    fn test_pop() {
+        let stack = stack![1, 2];
+        assert_eq!(Ok(stack![1]), Program::apply_builtin(stack, &BuiltIn::Pop));
+    }
 }

@@ -167,9 +167,19 @@ impl Program {
                 Ok(stack)
             }
             Swap => stack.swap(),
+            Sel => {
+                let v1 = stack.pop()?;
+                let v2 = stack.pop()?;
+                let v3 = stack.pop()?;
+                if v3.into_integer()? == 0 {
+                    stack.push(v1);
+                } else {
+                    stack.push(v2);
+                }
+                Ok(stack)
+            }
             Exec => Ok(stack),
             Nget => Ok(stack),
-            Sel => Ok(stack),
         }
     }
 }
@@ -263,6 +273,22 @@ mod test {
         assert_eq!(
             Ok(stack![1, 9]),
             Program::apply_builtin(stack![9, 1], &BuiltIn::Swap)
+        )
+    }
+
+    #[test]
+    fn test_sel_then() {
+        assert_eq!(
+            Ok(stack![3]),
+            Program::apply_builtin(stack![0, 2, 3], &BuiltIn::Sel)
+        )
+    }
+
+    #[test]
+    fn test_sel_else() {
+        assert_eq!(
+            Ok(stack![2]),
+            Program::apply_builtin(stack![1, 2, 3], &BuiltIn::Sel)
         )
     }
 }

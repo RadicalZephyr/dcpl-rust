@@ -1,3 +1,5 @@
+use std::iter::FromIterator;
+
 use dcpl::SExp;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -45,6 +47,27 @@ pub enum Command {
     ExecutableSequence(Vec<Command>),
     Integer(i128),
     BuiltIn(BuiltIn),
+}
+
+impl FromIterator<Command> for Command {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = Command>,
+    {
+        Command::ExecutableSequence(iter.into_iter().collect())
+    }
+}
+
+impl From<i128> for Command {
+    fn from(number: i128) -> Command {
+        Command::Integer(number)
+    }
+}
+
+impl From<BuiltIn> for Command {
+    fn from(builtin: BuiltIn) -> Command {
+        Command::BuiltIn(builtin)
+    }
 }
 
 impl Command {

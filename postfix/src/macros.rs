@@ -35,3 +35,37 @@ macro_rules! bool_op {
         Ok($stack)
     }};
 }
+
+#[macro_export]
+macro_rules! stack {
+    { $($val:expr),* }=> {{
+        let v = vec![ $($val),* ];
+        v.into_iter().map(StackValue::from).collect::<Vec<StackValue>>()
+    }}
+}
+
+#[macro_export]
+macro_rules! arith_op_test {
+    { $name:ident : $operator:expr => [ $($stack_val:expr),* ] == $expected:expr } => {
+        #[test]
+        fn $name() {
+            assert_eq!(Ok(stack![$expected]), Program::apply_builtin(stack![ $($stack_val),* ], &$operator));
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! bool_op_test {
+    { $name:ident : $operator:expr => [ $($stack_val:expr),* ] -> true } => {
+        #[test]
+        fn $name() {
+            assert_eq!(Ok(stack![1]), Program::apply_builtin(stack![ $($stack_val),* ], &$operator));
+        }
+    };
+    { $name:ident : $operator:expr => [ $($stack_val:expr),* ] -> false } => {
+        #[test]
+        fn $name() {
+            assert_eq!(Ok(stack![0]), Program::apply_builtin(stack![ $($stack_val),* ], &$operator));
+        }
+    };
+}

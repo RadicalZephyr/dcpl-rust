@@ -116,3 +116,22 @@ impl Program {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    arith_op_test!(test_add: BuiltIn::Add => [2, 1] == 3);
+    arith_op_test!(test_sub: BuiltIn::Sub => [2, 1] == 1);
+    arith_op_test!(test_mul: BuiltIn::Mul => [2, 3] == 6);
+    arith_op_test!(test_div: BuiltIn::Div => [6, 2] == 3);
+
+    bool_op_test!(test_eq: BuiltIn::Eq => [1, 1] -> true);
+    bool_op_test!(test_not_eq: BuiltIn::Eq => [1, 2] -> false);
+
+    bool_op_test!(test_gt: BuiltIn::Gt => [2, 1] -> true);
+    bool_op_test!(test_not_gt: BuiltIn::Gt => [1, 2] -> false);
+
+    bool_op_test!(test_lt: BuiltIn::Lt => [1, 2] -> true);
+    bool_op_test!(test_not_lt: BuiltIn::Lt => [2, 1] -> false);
+}

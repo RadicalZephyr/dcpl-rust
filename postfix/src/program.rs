@@ -72,16 +72,17 @@ impl Program {
     }
 
     fn apply_command(mut stack: Stack, command: &Command) -> Result<Stack, Error> {
+        use crate::parse::Command::*;
         match command {
-            Command::Integer(inner) => {
+            Integer(inner) => {
                 stack.push(StackValue::from(*inner));
                 Ok(stack)
             }
-            Command::ExecutableSequence(inner) => {
+            ExecutableSequence(inner) => {
                 stack.push(inner.iter().cloned().collect());
                 Ok(stack)
             }
-            Command::BuiltIn(builtin) => Program::apply_builtin(stack, builtin),
+            BuiltIn(builtin) => Program::apply_builtin(stack, builtin),
         }
     }
 

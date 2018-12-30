@@ -173,17 +173,20 @@ mod test {
         }
     }
 
-    macro_rules! bool_op_test {
-        { $name:ident : $operator:expr => [ $($stack_val:expr),* ] -> true } => {
-            #[test]
-            fn $name() {
-                assert_eq!(Ok(stack![1]), Program::apply_builtin(stack![ $($stack_val),* ], &$operator));
-            }
+    macro_rules! boolean {
+        (true) => {
+            stack![1]
         };
-        { $name:ident : $operator:expr => [ $($stack_val:expr),* ] -> false } => {
+        (false) => {
+            stack![0]
+        };
+    }
+
+    macro_rules! bool_op_test {
+        { $name:ident : $operator:expr => [ $($stack_val:expr),* ] -> $expected:tt } => {
             #[test]
             fn $name() {
-                assert_eq!(Ok(stack![0]), Program::apply_builtin(stack![ $($stack_val),* ], &$operator));
+                assert_eq!(Ok(boolean!($expected)), Program::apply_builtin(stack![ $($stack_val),* ], &$operator));
             }
         };
     }

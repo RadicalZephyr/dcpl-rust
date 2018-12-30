@@ -100,21 +100,7 @@ impl Program {
     fn apply_builtin(mut stack: Stack, builtin: &BuiltIn) -> Result<Stack, Error> {
         use crate::parse::BuiltIn::*;
         match builtin {
-            Add => {
-                let v1 = stack
-                    .pop()
-                    .ok_or(Error::NotEnoughValues)?
-                    .into_integer()
-                    .ok_or(Error::NotANumber)?;
-                let v2 = stack
-                    .pop()
-                    .ok_or(Error::NotEnoughValues)?
-                    .into_integer()
-                    .ok_or(Error::NotANumber)?;
-
-                stack.push(StackValue::Integer(v2 + v1));
-                Ok(stack)
-            }
+            Add => arith_op!(stack, +),
             Div => Ok(stack),
             Eq => Ok(stack),
             Exec => Ok(stack),

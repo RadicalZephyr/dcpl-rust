@@ -58,6 +58,23 @@ macro_rules! into_fns {
     }
 }
 
+macro_rules! is_fns {
+    {
+        $(
+            fn $name:ident() -> $( $p:pat )|+ => true;
+        )*
+    } => {
+        $(
+            pub fn $name(&self) -> bool {
+                match self {
+                    $( $p )|+ => true,
+                    _ => false,
+                }
+            }
+        )*
+    }
+}
+
 impl Value {
     pub fn string(value: impl Into<String>) -> Value {
         Value::String(value.into())
@@ -93,60 +110,26 @@ impl Value {
         fn into_bool() -> Bool;
     }
 
-    pub fn is_list(&self) -> bool {
-        match self {
-            Value::List(_) => true,
-            _ => false,
-        }
+    is_fns! {
+        fn is_list() -> Value::List(_) => true;
+
+        fn is_symbol() -> Value::Symbol(_) => true;
+
+        fn is_string() -> Value::String(_) => true;
+
+        fn is_number() -> Value::Integer(_) | Value::Double(_) => true;
+
+        fn is_integer() -> Value::Integer(_) => true;
+
+        fn is_double() -> Value::Double(_) => true;
+
+        fn is_bool() -> Value::Bool(_) => true;
     }
 
     pub fn is_atom(&self) -> bool {
         match self {
             Value::List(_) => false,
             _ => true,
-        }
-    }
-
-    pub fn is_symbol(&self) -> bool {
-        match self {
-            Value::Symbol(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_string(&self) -> bool {
-        match self {
-            Value::String(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_number(&self) -> bool {
-        use self::Value::*;
-        match self {
-            Integer(_) | Double(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_integer(&self) -> bool {
-        match self {
-            Value::Integer(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_float(&self) -> bool {
-        match self {
-            Value::Double(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_bool(&self) -> bool {
-        match self {
-            Value::Bool(_) => true,
-            _ => false,
         }
     }
 }

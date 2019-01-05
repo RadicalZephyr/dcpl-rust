@@ -1,7 +1,7 @@
 file = { SOI ~ sexp+ ~ EOI }
 sexp = _{ atom | list  }
 list = { "(" ~ (sexp)* ~ ")" }
-atom = _{ number | symbol | string }
+atom = _{ string | number | symbol }
 number = _{ float | integer }
 float = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
 integer = @{ "-"? ~ ASCII_DIGIT+ }

@@ -1,7 +1,6 @@
 use dcpl::Interpreter;
 
-mod interpreter;
-use crate::interpreter::Runtime;
+use lisp::Runtime;
 
 fn main() {
     let mut runtime = Runtime::new();

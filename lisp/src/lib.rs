@@ -3,8 +3,13 @@ use dcpl::SExp;
 mod interpreter;
 pub use crate::interpreter::Runtime;
 
+mod list;
+
 #[derive(Clone, Debug, PartialEq)]
-pub struct List(Vec<Value>);
+pub enum List {
+    Cell { first: Box<Value>, rest: Box<Value> },
+    Nil,
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Symbol(String);
@@ -120,7 +125,7 @@ impl Value {
 impl From<SExp> for Value {
     fn from(expr: SExp) -> Value {
         match expr {
-            SExp::List(list) => Value::List(List(list.into_iter().map(Value::from).collect())),
+            SExp::List(list) => Value::List(list.into_iter().map(Value::from).collect()),
             SExp::Integer(value) => Value::Integer(Integer(value)),
             SExp::Float(value) => Value::Double(Double(value)),
             SExp::String(value) => Value::String(value),

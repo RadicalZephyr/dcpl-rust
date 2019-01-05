@@ -7,6 +7,6 @@ float = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
 integer = @{ "-"? ~ ASCII_DIGIT+ }
 string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
 symbol = @{ sym_char+ }
-sym_char = _{ ASCII_ALPHANUMERIC | ":" | "!" | "*" | "+" | "|" | "#" | "&" | "-" | "_" | "<" | ">" }
+sym_char = _{ ASCII_ALPHANUMERIC | "!" | "$" | "%" | "&" | "*" | "+" | "-" | "." | "/" | ":" | "<" | "=" | ">" | "?" | "@" | "_" | "|" }
 WHITESPACE = _{ "," | " " | "\t" | NEWLINE }
 COMMENT = _{ ";;" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }

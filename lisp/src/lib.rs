@@ -39,10 +39,60 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn is_list(&self) -> bool {
+        match self {
+            Value::List(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn is_atom(&self) -> bool {
         match self {
             Value::List(_) => false,
             _ => true,
+        }
+    }
+
+    pub fn is_symbol(&self) -> bool {
+        match self {
+            Value::Symbol(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_string(&self) -> bool {
+        match self {
+            Value::String(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_number(&self) -> bool {
+        use self::Value::*;
+        match self {
+            Integer(_) | Double(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_integer(&self) -> bool {
+        match self {
+            Value::Integer(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_float(&self) -> bool {
+        match self {
+            Value::Double(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_bool(&self) -> bool {
+        match self {
+            Value::Bool(_) => true,
+            _ => false,
         }
     }
 }

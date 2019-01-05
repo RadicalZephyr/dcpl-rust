@@ -137,6 +137,56 @@ impl SExp {
             _ => None,
         }
     }
+
+    pub fn is_list(&self) -> bool {
+        match self {
+            SExp::List(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_atom(&self) -> bool {
+        match self {
+            SExp::List(_) => false,
+            _ => true,
+        }
+    }
+
+    pub fn is_symbol(&self) -> bool {
+        match self {
+            SExp::Symbol(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_string(&self) -> bool {
+        match self {
+            SExp::String(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_number(&self) -> bool {
+        use self::SExp::*;
+        match self {
+            Integer(_) | Float(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_integer(&self) -> bool {
+        match self {
+            SExp::Integer(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_float(&self) -> bool {
+        match self {
+            SExp::Float(_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl fmt::Display for SExp {

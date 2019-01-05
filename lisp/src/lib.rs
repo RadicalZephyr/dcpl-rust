@@ -43,6 +43,23 @@ pub enum Value {
     Bool(Bool),
 }
 
+macro_rules! into_fns {
+    {
+        $( fn $name:ident() -> $res_type:ty {
+            $match:pat => $res:expr
+        } )*
+    } => {
+        $(
+            pub fn $name(self) -> Option<$res_type> {
+                match self {
+                    $match => Some($res),
+                    _ => None,
+                }
+            }
+        )*
+    }
+}
+
 impl Value {
     pub fn string(value: impl Into<String>) -> Value {
         Value::String(value.into())
@@ -62,6 +79,28 @@ impl Value {
 
     pub fn bool(value: bool) -> Value {
         Value::Bool(Bool(value))
+    }
+
+    into_fns! {
+        fn into_list() -> List {
+            Value::List(value) => value
+        }
+
+        fn into_symbol() -> Symbol {
+            Value::Symbol(value) => value
+        }
+
+        fn into_string() -> String {
+            Value::String(value) => value
+        }
+
+        fn into_integer() -> Integer {
+            Value::Integer(value) => value
+        }
+
+        fn into_double() -> Double {
+            Value::Double(value) => value
+        }
     }
 
     pub fn is_list(&self) -> bool {

@@ -39,6 +39,26 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn string(value: impl Into<String>) -> Value {
+        Value::String(value.into())
+    }
+
+    pub fn symbol(name: impl Into<String>) -> Value {
+        Value::Symbol(Symbol(name.into()))
+    }
+
+    pub fn integer(value: i128) -> Value {
+        Value::Integer(Integer(value))
+    }
+
+    pub fn double(value: f64) -> Value {
+        Value::Double(Double(value))
+    }
+
+    pub fn bool(value: bool) -> Value {
+        Value::Bool(Bool(value))
+    }
+
     pub fn is_list(&self) -> bool {
         match self {
             Value::List(_) => true,

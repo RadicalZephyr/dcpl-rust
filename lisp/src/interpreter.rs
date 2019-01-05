@@ -48,26 +48,23 @@ impl Runtime {
 
 #[cfg(test)]
 mod test {
-    // use super::*;
+    use super::*;
 
-    // use dcpl::SExp;
-    // use dcpl::SExp::*;
+    #[test]
+    fn test_eval_integer() {
+        let mut rt = Runtime::new();
+        assert_eq!(Ok(Value::integer(10)), rt.eval(Value::integer(10)));
+    }
 
-    // #[test]
-    // fn test_eval_integer() {
-    //     let mut rt = Runtime::new();
-    //     assert_eq!(Ok(Integer(10)), rt.eval(Integer(10)));
-    // }
+    #[test]
+    fn test_eval_float() {
+        let mut rt = Runtime::new();
+        assert_eq!(Ok(Value::double(1.0)), rt.eval(Value::double(1.0)));
+    }
 
-    // #[test]
-    // fn test_eval_float() {
-    //     let mut rt = Runtime::new();
-    //     assert_eq!(Ok(Float(1.0)), rt.eval(Float(1.0)));
-    // }
-
-    // #[test]
-    // fn test_eval_string() {
-    //     let mut rt = Runtime::new();
-    //     assert_eq!(Ok(SExp::string("foo")), rt.eval(SExp::string("foo")));
-    // }
+    #[test]
+    fn test_eval_string() {
+        let mut rt = Runtime::new();
+        assert_eq!(Ok(Value::string("foo")), rt.eval(Value::string("foo")));
+    }
 }

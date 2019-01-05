@@ -45,14 +45,12 @@ pub enum Value {
 
 macro_rules! into_fns {
     {
-        $( fn $name:ident() -> $res_type:ty {
-            $match:pat => $res:expr
-        } )*
+        $( fn $name:ident() -> $res_type:tt ; )*
     } => {
         $(
             pub fn $name(self) -> Option<$res_type> {
                 match self {
-                    $match => Some($res),
+                    Value::$res_type(value) => Some(value),
                     _ => None,
                 }
             }
@@ -82,25 +80,17 @@ impl Value {
     }
 
     into_fns! {
-        fn into_list() -> List {
-            Value::List(value) => value
-        }
+        fn into_list() -> List;
 
-        fn into_symbol() -> Symbol {
-            Value::Symbol(value) => value
-        }
+        fn into_symbol() -> Symbol;
 
-        fn into_string() -> String {
-            Value::String(value) => value
-        }
+        fn into_string() -> String;
 
-        fn into_integer() -> Integer {
-            Value::Integer(value) => value
-        }
+        fn into_integer() -> Integer;
 
-        fn into_double() -> Double {
-            Value::Double(value) => value
-        }
+        fn into_double() -> Double;
+
+        fn into_bool() -> Bool;
     }
 
     pub fn is_list(&self) -> bool {

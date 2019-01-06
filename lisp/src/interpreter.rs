@@ -11,6 +11,7 @@ pub enum Error {
     IfError,
     InvokeError,
     LambdaError,
+    NotAFunction,
     NotImplemented,
     QuoteError,
     SetBangError,
@@ -123,10 +124,10 @@ impl Runtime {
                         }
                     }
                 } else {
-                    Err(Error::NotImplemented)
+                    Err(Error::NotAFunction)
                 }
             } else {
-                Err(Error::NotImplemented)
+                unreachable!()
             }
         }
     }

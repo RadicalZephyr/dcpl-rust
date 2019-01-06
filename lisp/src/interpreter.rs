@@ -244,7 +244,22 @@ mod test {
                     ((lambda (b)
                        (if a a b) )
                      10) )
-                  false)"
+                  0)"
+            ))
+        );
+    }
+
+    #[test]
+    fn test_eval_lambda_deep() {
+        let mut rt = Runtime::new();
+        assert_eq!(
+            Ok(Value::bool(true)),
+            rt.eval(lisp!(
+                "(((lambda (a)
+                     (lambda (b)
+                       (if a a b)) )
+                   true)
+                  2)"
             ))
         );
     }

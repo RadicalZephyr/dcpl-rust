@@ -34,8 +34,17 @@ impl Env {
         self.0.get(name).cloned()
     }
 
-    fn extend(&self, _names: &List, _bindings: List) -> Env {
-        let new_env = self.clone();
+    fn extend(&self, names: &List, values: List) -> Env {
+        let mut new_env = self.clone();
+
+        let pairs = names.into_iter().zip(values.into_iter());
+        for (name, value) in pairs {
+            let name_sym = name
+                .clone()
+                .into_symbol()
+                .expect("binding names must be symbols");
+            new_env.update(name_sym, value);
+        }
 
         new_env
     }

@@ -34,8 +34,8 @@ impl Runtime {
             }
         } else {
             let list = expr.into_list().unwrap();
-            if let Some(sym) = list.first().cloned() {
-                if let Some(symbol) = sym.into_symbol() {
+            if let Some(value) = list.first().cloned() {
+                if let Some(symbol) = value.as_symbol() {
                     match symbol.0.as_ref() {
                         "quote" => list.second().cloned().ok_or(Error::QuoteError),
                         "if" => {
@@ -89,7 +89,7 @@ impl Runtime {
                         }
                         _ => {
                             let f = self
-                                .eval(Value::Symbol(symbol))?
+                                .eval(Value::Symbol(symbol.clone()))?
                                 .into_fn()
                                 .ok_or(Error::InvokeError)?;
                             let args = list
@@ -104,7 +104,16 @@ impl Runtime {
                         }
                     }
                 } else {
-                    Err(Error::NotAFunction)
+                    let f = self.eval(value)?.into_fn().ok_or(Error::InvokeError)?;
+                    let args = list
+                        .rest()
+                        .ok_or(Error::InvokeError)?
+                        .clone()
+                        .into_list()
+                        .ok_or(Error::InvokeError)?;
+                    let args = self.evlist(args)?;
+
+                    f.invoke(args)
                 }
             } else {
                 unreachable!()
@@ -222,6 +231,21 @@ mod test {
         assert_eq!(
             Ok(Value::integer(3)),
             rt.eval(lisp!("(begin (set! foo 3) foo)"))
+        );
+    }
+
+    #[test]
+    fn test_eval_lambda() {
+        let mut rt = Runtime::new();
+        assert_eq!(
+            Ok(Value::integer(0)),
+            rt.eval(lisp!(
+                "((lambda (a)
+                    ((lambda (b)
+                       (if a a b) )
+                     10) )
+                  false)"
+            ))
         );
     }
 }

@@ -1,9 +1,24 @@
+use std::collections::HashMap;
+
 use dcpl::SExp;
 
 mod interpreter;
 pub use crate::interpreter::Runtime;
 
 mod list;
+
+#[derive(Clone, Debug, PartialEq)]
+struct Env(HashMap<Symbol, Value>);
+
+impl Env {
+    fn update(&mut self, name: Symbol, value: Value) {
+        self.0.insert(name, value);
+    }
+
+    fn lookup(&self, name: &Symbol) -> Option<Value> {
+        self.0.get(name).cloned()
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum List {
@@ -42,6 +57,13 @@ pub struct Double(f64);
 pub struct Bool(bool);
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct LispFn {
+    args: List,
+    body: List,
+    env: Env,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     List(List),
     Symbol(Symbol),
@@ -49,6 +71,7 @@ pub enum Value {
     Integer(Integer),
     Double(Double),
     Bool(Bool),
+    LispFn(LispFn),
 }
 
 macro_rules! into_fns {
@@ -131,6 +154,8 @@ impl Value {
         fn into_double() -> Double;
 
         fn into_bool() -> Bool;
+
+        fn into_fn() -> LispFn;
     }
 
     as_fns! {
@@ -145,6 +170,8 @@ impl Value {
         fn as_double() -> Double;
 
         fn as_bool() -> Bool;
+
+        fn as_fn() -> LispFn;
     }
 
     is_fns! {
@@ -161,6 +188,8 @@ impl Value {
         fn is_double() -> Value::Double(_) => true;
 
         fn is_bool() -> Value::Bool(_) => true;
+
+        fn is_fn() -> Value::LispFn(_) => true;
     }
 
     pub fn is_atom(&self) -> bool {

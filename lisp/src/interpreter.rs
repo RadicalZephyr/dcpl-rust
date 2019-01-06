@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use dcpl::SExp;
 
-use crate::{Integer, List, Symbol, Value};
+use crate::{Env, Integer, List, Value};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
@@ -16,19 +16,6 @@ pub enum Error {
     QuoteError,
     SetBangError,
     UndefinedSymbol,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-struct Env(HashMap<Symbol, Value>);
-
-impl Env {
-    fn update(&mut self, name: Symbol, value: Value) {
-        self.0.insert(name, value);
-    }
-
-    fn lookup(&self, name: &Symbol) -> Option<Value> {
-        self.0.get(name).cloned()
-    }
 }
 
 #[derive(Clone, Debug, PartialEq)]

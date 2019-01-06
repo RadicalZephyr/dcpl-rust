@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use dcpl::SExp;
 
-use crate::{Integer, Symbol, Value};
+use crate::{Integer, List, Symbol, Value};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
@@ -85,7 +85,7 @@ impl Runtime {
                             let to_eval = list.nth(2).ok_or(Error::SetBangError)?;
                             let value = self.eval(to_eval.clone())?;
                             self.env.update(symbol, value);
-                            Err(Error::NotImplemented)
+                            Ok(Value::List(List::Nil))
                         }
                         _ => Err(Error::NotImplemented),
                     }
@@ -171,5 +171,14 @@ mod test {
     fn test_eval_begin_multiple() {
         let mut rt = Runtime::new();
         assert_eq!(Ok(Value::integer(100)), rt.eval(lisp!("(begin 2 3 100)")));
+    }
+
+    #[test]
+    fn test_eval_set_bang() {
+        let mut rt = Runtime::new();
+        assert_eq!(
+            Ok(Value::integer(3)),
+            rt.eval(lisp!("(begin (set! foo 3) foo)"))
+        );
     }
 }

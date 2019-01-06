@@ -8,6 +8,7 @@ use crate::{Env, Integer, LispFn, List, Value};
 pub enum Error {
     BeginError,
     EPrognError,
+    EvListError,
     IfError,
     InvokeError,
     LambdaError,
@@ -134,8 +135,24 @@ impl Runtime {
         Ok(Value::LispFn(LispFn { args, body, env }))
     }
 
-    pub fn evlist(&self, _values: List) -> Result<List, Error> {
-        Err(Error::NotImplemented)
+    pub fn evlist(&mut self, values: List) -> Result<List, Error> {
+        if values.is_pair() {
+            let value = values.first().cloned().ok_or(Error::EvListError)?;
+            let cell = self.evlist(
+                values
+                    .rest()
+                    .cloned()
+                    .ok_or(Error::EvListError)?
+                    .into_list()
+                    .ok_or(Error::EvListError)?,
+            )?;
+            Ok(List::Cell {
+                first: Box::new(self.eval(value)?),
+                rest: Box::new(Value::List(cell)),
+            })
+        } else {
+            Ok(List::Nil)
+        }
     }
 }
 

@@ -9,6 +9,7 @@ pub enum Error {
     BeginError,
     EPrognError,
     IfError,
+    LambdaError,
     NotImplemented,
     QuoteError,
     SetBangError,
@@ -87,6 +88,26 @@ impl Runtime {
                             self.env.update(symbol, value);
                             Ok(Value::List(List::Nil))
                         }
+                        "lambda" => {
+                            let args = list
+                                .nth(1)
+                                .ok_or(Error::LambdaError)?
+                                .clone()
+                                .into_list()
+                                .ok_or(Error::LambdaError)?;
+                            let body = list
+                                .rest()
+                                .ok_or(Error::LambdaError)?
+                                .as_list()
+                                .ok_or(Error::LambdaError)?
+                                .rest()
+                                .ok_or(Error::LambdaError)?
+                                .clone()
+                                .into_list()
+                                .ok_or(Error::LambdaError)?;
+
+                            self.make_function(args, body)
+                        }
                         _ => Err(Error::NotImplemented),
                     }
                 } else {
@@ -106,6 +127,11 @@ impl Runtime {
             exprs = cell.rest().unwrap();
         }
         Ok(last)
+    }
+
+    pub fn make_function(&self, _args: List, _body: List) -> Result<Value, Error> {
+        Err(Error::NotImplemented)
+    }
     }
 }
 

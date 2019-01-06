@@ -161,6 +161,13 @@ impl Value {
             _ => true,
         }
     }
+
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            Value::Bool(Bool(false)) | Value::List(List::Nil) => false,
+            _ => true,
+        }
+    }
 }
 
 impl From<SExp> for Value {

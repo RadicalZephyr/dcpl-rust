@@ -2,22 +2,7 @@ use std::collections::HashMap;
 
 use dcpl::SExp;
 
-use crate::{Env, Integer, LispFn, List, Value};
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Error {
-    BeginError,
-    EPrognError,
-    EvListError,
-    IfError,
-    InvokeError,
-    LambdaError,
-    NotAFunction,
-    NotImplemented,
-    QuoteError,
-    SetBangError,
-    UndefinedSymbol,
-}
+use crate::{Env, Error, Integer, LispFn, List, Value};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Runtime {
@@ -27,6 +12,10 @@ pub struct Runtime {
 impl Runtime {
     pub fn new() -> Runtime {
         let env = Env(HashMap::new());
+        Runtime { env }
+    }
+
+    pub fn new_with_env(env: Env) -> Runtime {
         Runtime { env }
     }
 
@@ -99,7 +88,10 @@ impl Runtime {
                             self.make_function(args, body)
                         }
                         _ => {
-                            let f = self.eval(Value::Symbol(symbol))?;
+                            let f = self
+                                .eval(Value::Symbol(symbol))?
+                                .into_fn()
+                                .ok_or(Error::InvokeError)?;
                             let args = list
                                 .rest()
                                 .ok_or(Error::InvokeError)?
@@ -108,7 +100,7 @@ impl Runtime {
                                 .ok_or(Error::InvokeError)?;
                             let args = self.evlist(args)?;
 
-                            Err(Error::NotImplemented)
+                            f.invoke(args)
                         }
                     }
                 } else {
@@ -130,9 +122,13 @@ impl Runtime {
         Ok(last)
     }
 
-    pub fn make_function(&self, args: List, body: List) -> Result<Value, Error> {
+    pub fn make_function(&self, arg_names: List, body: List) -> Result<Value, Error> {
         let env = self.env.clone();
-        Ok(Value::LispFn(LispFn { args, body, env }))
+        Ok(Value::LispFn(LispFn {
+            arg_names,
+            body,
+            env,
+        }))
     }
 
     pub fn evlist(&mut self, values: List) -> Result<List, Error> {

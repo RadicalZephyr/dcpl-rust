@@ -1,6 +1,6 @@
 use crate::{List, Value};
 
-use std::iter::FromIterator;
+use std::iter::{FromIterator, IntoIterator};
 
 impl FromIterator<Value> for List {
     fn from_iter<T>(iter: T) -> Self
@@ -17,6 +17,32 @@ impl FromIterator<Value> for List {
             };
         }
         cell
+    }
+}
+
+pub struct ListIter(List);
+
+impl Iterator for ListIter {
+    type Item = Value;
+
+    fn next(&mut self) -> Option<Value> {
+        match self.0.clone() {
+            List::Cell { first, rest } => {
+                self.0 = rest.into_list().unwrap_or(List::Nil);
+
+                Some(*first)
+            }
+            List::Nil => None,
+        }
+    }
+}
+
+impl IntoIterator for List {
+    type Item = Value;
+    type IntoIter = ListIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ListIter(self)
     }
 }
 

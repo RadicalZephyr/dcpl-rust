@@ -8,7 +8,22 @@ pub use crate::interpreter::Runtime;
 mod list;
 
 #[derive(Clone, Debug, PartialEq)]
-struct Env(HashMap<Symbol, Value>);
+pub enum Error {
+    BeginError,
+    EPrognError,
+    EvListError,
+    IfError,
+    InvokeError,
+    LambdaError,
+    NotAFunction,
+    NotImplemented,
+    QuoteError,
+    SetBangError,
+    UndefinedSymbol,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Env(HashMap<Symbol, Value>);
 
 impl Env {
     fn update(&mut self, name: Symbol, value: Value) {
@@ -17,6 +32,12 @@ impl Env {
 
     fn lookup(&self, name: &Symbol) -> Option<Value> {
         self.0.get(name).cloned()
+    }
+
+    fn extend(&self, _names: &List, _bindings: List) -> Env {
+        let new_env = self.clone();
+
+        new_env
     }
 }
 
@@ -58,9 +79,21 @@ pub struct Bool(bool);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LispFn {
-    args: List,
+    arg_names: List,
     body: List,
     env: Env,
+}
+
+impl LispFn {
+    pub fn invoke(&self, arguments: List) -> Result<Value, Error> {
+        let fn_env = self.env.extend(&self.arg_names, arguments);
+        let mut rt = Runtime::new_with_env(fn_env);
+        let mut last = Value::List(List::Nil);
+        for value in self.body.clone() {
+            last = rt.eval(value)?;
+        }
+        Ok(last)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]

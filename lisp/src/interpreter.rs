@@ -4,6 +4,7 @@ use dcpl::SExp;
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
     UndefinedSymbol,
+    QuoteError,
     NotImplemented,
 }
 
@@ -41,7 +42,19 @@ impl Runtime {
                 _ => Ok(expr),
             }
         } else {
-            Err(Error::NotImplemented)
+            let list = expr.into_list().unwrap();
+            if let Some(sym) = list.first().cloned() {
+                if let Some(symbol) = sym.into_symbol() {
+                    match symbol.0.as_ref() {
+                        "quote" => list.second().cloned().ok_or(Error::QuoteError),
+                        _ => Err(Error::NotImplemented),
+                    }
+                } else {
+                    Err(Error::NotImplemented)
+                }
+            } else {
+                Err(Error::NotImplemented)
+            }
         }
     }
 }
@@ -66,5 +79,17 @@ mod test {
     fn test_eval_string() {
         let mut rt = Runtime::new();
         assert_eq!(Ok(Value::string("foo")), rt.eval(Value::string("foo")));
+    }
+
+    macro_rules! lisp {
+        { $e:expr } => {
+            dcpl::SExpParser::parse_line($e).expect("unexpected parse failure").into()
+        }
+    }
+
+    #[test]
+    fn test_eval_quote() {
+        let mut rt = Runtime::new();
+        assert_eq!(Ok(Value::bool(true)), rt.eval(lisp!("(quote true)")));
     }
 }

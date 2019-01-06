@@ -1,4 +1,4 @@
-use crate::{List, Symbol, Value};
+use crate::{Integer, Symbol, Value};
 use dcpl::SExp;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -80,7 +80,7 @@ impl Runtime {
     }
 
     pub fn eprogn(&mut self, mut exprs: &Value) -> Result<Value, Error> {
-        let mut last = Value::List(List::Nil);
+        let mut last = Value::Integer(Integer(813));
         while exprs.is_list() && exprs.as_list().unwrap().is_pair() {
             let cell = exprs.as_list().unwrap();
             last = self.eval(cell.first().cloned().unwrap())?;
@@ -134,6 +134,12 @@ mod test {
     fn test_eval_if() {
         let mut rt = Runtime::new();
         assert_eq!(Ok(Value::integer(1)), rt.eval(lisp!("(if true 1 2)")));
+    }
+
+    #[test]
+    fn test_eval_begin_empty() {
+        let mut rt = Runtime::new();
+        assert_eq!(Ok(Value::integer(813)), rt.eval(lisp!("(begin)")));
     }
 
     #[test]

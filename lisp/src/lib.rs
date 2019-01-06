@@ -58,6 +58,21 @@ macro_rules! into_fns {
     }
 }
 
+macro_rules! as_fns {
+    {
+        $( fn $name:ident() -> $res_type:tt ; )*
+    } => {
+        $(
+            pub fn $name(&self) -> Option<& $res_type> {
+                match self {
+                    Value::$res_type(ref value) => Some(value),
+                    _ => None,
+                }
+            }
+        )*
+    }
+}
+
 macro_rules! is_fns {
     {
         $(
@@ -108,6 +123,20 @@ impl Value {
         fn into_double() -> Double;
 
         fn into_bool() -> Bool;
+    }
+
+    as_fns! {
+        fn as_list() -> List;
+
+        fn as_symbol() -> Symbol;
+
+        fn as_string() -> String;
+
+        fn as_integer() -> Integer;
+
+        fn as_double() -> Double;
+
+        fn as_bool() -> Bool;
     }
 
     is_fns! {

@@ -1,5 +1,8 @@
-use crate::{Integer, Symbol, Value};
+use std::collections::HashMap;
+
 use dcpl::SExp;
+
+use crate::{Integer, Symbol, Value};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
@@ -13,16 +16,15 @@ pub enum Error {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-struct Env {}
+struct Env(HashMap<Symbol, Value>);
 
 impl Env {
-    fn update(&mut self, _name: Symbol, _value: Value) {
-        println!("failed to set value: '{:?}'", _name);
+    fn update(&mut self, name: Symbol, value: Value) {
+        self.0.insert(name, value);
     }
 
-    fn lookup(&self, _name: Symbol) -> Option<Value> {
-        println!("failed to look up: '{:?}'", _name);
-        None
+    fn lookup(&self, name: &Symbol) -> Option<Value> {
+        self.0.get(name).cloned()
     }
 }
 
@@ -33,7 +35,7 @@ pub struct Runtime {
 
 impl Runtime {
     pub fn new() -> Runtime {
-        let env = Env {};
+        let env = Env(HashMap::new());
         Runtime { env }
     }
 
@@ -47,7 +49,7 @@ impl Runtime {
     pub fn eval(&mut self, expr: Value) -> Result<Value, Error> {
         if expr.is_atom() {
             match expr {
-                Value::Symbol(name) => self.env.lookup(name).ok_or(Error::UndefinedSymbol),
+                Value::Symbol(name) => self.env.lookup(&name).ok_or(Error::UndefinedSymbol),
                 _ => Ok(expr),
             }
         } else {

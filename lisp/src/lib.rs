@@ -19,7 +19,7 @@ impl List {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Symbol(String);
 
 impl Symbol {

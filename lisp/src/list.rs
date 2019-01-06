@@ -20,9 +20,9 @@ impl FromIterator<Value> for List {
     }
 }
 
-pub struct ListIter(List);
+pub struct IntoIter(List);
 
-impl Iterator for ListIter {
+impl Iterator for IntoIter {
     type Item = Value;
 
     fn next(&mut self) -> Option<Value> {
@@ -39,10 +39,39 @@ impl Iterator for ListIter {
 
 impl IntoIterator for List {
     type Item = Value;
-    type IntoIter = ListIter;
+    type IntoIter = IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        ListIter(self)
+        IntoIter(self)
+    }
+}
+
+pub struct Iter<'a>(&'a List);
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = &'a Value;
+
+    fn next(&mut self) -> Option<&'a Value> {
+        match self.0 {
+            List::Cell {
+                ref first,
+                ref rest,
+            } => {
+                self.0 = rest.as_list().unwrap_or(&List::Nil);
+
+                Some(first)
+            }
+            List::Nil => None,
+        }
+    }
+}
+
+impl<'a> IntoIterator for &'a List {
+    type Item = &'a Value;
+    type IntoIter = Iter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Iter(self)
     }
 }
 

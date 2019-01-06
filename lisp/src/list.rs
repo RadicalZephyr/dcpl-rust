@@ -40,12 +40,11 @@ impl List {
     }
 
     pub fn nth(&self, mut idx: usize) -> Option<&Value> {
-        let mut cell = self.rest();
-        idx -= 1;
+        let mut cell = Some(self);
         while idx > 0 {
-            cell = cell.and_then(|c| c.as_list()).and_then(|c| c.rest());
+            cell = cell.and_then(|c| c.rest()).and_then(|c| c.as_list());
             idx -= 1;
         }
-        cell.and_then(|c| c.as_list()).and_then(|c| c.first())
+        cell.and_then(|c| c.first())
     }
 }

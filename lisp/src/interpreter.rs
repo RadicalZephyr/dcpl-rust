@@ -49,7 +49,7 @@ impl Runtime {
                     match symbol.0.as_ref() {
                         "quote" => list.second().cloned().ok_or(Error::QuoteError),
                         "if" => {
-                            let condition = list.first().ok_or(Error::IfError)?;
+                            let condition = list.nth(0).ok_or(Error::IfError)?;
                             let consequent = list.nth(1).ok_or(Error::IfError)?;
                             let alternate = list.nth(2).ok_or(Error::IfError)?;
 

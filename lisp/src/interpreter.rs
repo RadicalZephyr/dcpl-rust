@@ -9,6 +9,7 @@ pub enum Error {
     BeginError,
     EPrognError,
     IfError,
+    InvokeError,
     LambdaError,
     NotImplemented,
     QuoteError,
@@ -108,7 +109,18 @@ impl Runtime {
 
                             self.make_function(args, body)
                         }
-                        _ => Err(Error::NotImplemented),
+                        _ => {
+                            let f = self.eval(Value::Symbol(symbol))?;
+                            let args = list
+                                .rest()
+                                .ok_or(Error::InvokeError)?
+                                .clone()
+                                .into_list()
+                                .ok_or(Error::InvokeError)?;
+                            let args = self.evlist(args)?;
+
+                            Err(Error::NotImplemented)
+                        }
                     }
                 } else {
                     Err(Error::NotImplemented)
@@ -132,6 +144,9 @@ impl Runtime {
     pub fn make_function(&self, _args: List, _body: List) -> Result<Value, Error> {
         Err(Error::NotImplemented)
     }
+
+    pub fn evlist(&self, _values: List) -> Result<List, Error> {
+        Err(Error::NotImplemented)
     }
 }
 

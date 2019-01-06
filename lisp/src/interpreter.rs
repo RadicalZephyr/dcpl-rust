@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use dcpl::SExp;
 
-use crate::{Env, Integer, List, Value};
+use crate::{Env, Integer, LispFn, List, Value};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
@@ -129,8 +129,9 @@ impl Runtime {
         Ok(last)
     }
 
-    pub fn make_function(&self, _args: List, _body: List) -> Result<Value, Error> {
-        Err(Error::NotImplemented)
+    pub fn make_function(&self, args: List, body: List) -> Result<Value, Error> {
+        let env = self.env.clone();
+        Ok(Value::LispFn(LispFn { args, body, env }))
     }
 
     pub fn evlist(&self, _values: List) -> Result<List, Error> {

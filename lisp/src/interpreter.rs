@@ -6,15 +6,20 @@ pub enum Error {
     BeginError,
     EPrognError,
     IfError,
-    UndefinedSymbol,
-    QuoteError,
     NotImplemented,
+    QuoteError,
+    SetBangError,
+    UndefinedSymbol,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 struct Env {}
 
 impl Env {
+    fn update(&mut self, _name: Symbol, _value: Value) {
+        println!("failed to set value: '{:?}'", _name);
+    }
+
     fn lookup(&self, _name: Symbol) -> Option<Value> {
         println!("failed to look up: '{:?}'", _name);
         None
@@ -67,6 +72,18 @@ impl Runtime {
                         "begin" => {
                             let rest = list.rest().ok_or(Error::BeginError)?;
                             self.eprogn(rest)
+                        }
+                        "set!" => {
+                            let symbol = list
+                                .nth(1)
+                                .ok_or(Error::SetBangError)?
+                                .clone()
+                                .into_symbol()
+                                .ok_or(Error::SetBangError)?;
+                            let to_eval = list.nth(2).ok_or(Error::SetBangError)?;
+                            let value = self.eval(to_eval.clone())?;
+                            self.env.update(symbol, value);
+                            Err(Error::NotImplemented)
                         }
                         _ => Err(Error::NotImplemented),
                     }

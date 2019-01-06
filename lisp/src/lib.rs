@@ -11,6 +11,14 @@ pub enum List {
     Nil,
 }
 
+impl List {
+    pub fn is_pair(&self) -> bool {
+        match self {
+            List::Cell { .. } => true,
+            List::Nil => false,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq)]
 pub struct Symbol(String);
 

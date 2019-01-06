@@ -1,8 +1,10 @@
-use crate::{Symbol, Value};
+use crate::{List, Symbol, Value};
 use dcpl::SExp;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
+    BeginError,
+    EPrognError,
     IfError,
     UndefinedSymbol,
     QuoteError,
@@ -14,6 +16,7 @@ struct Env {}
 
 impl Env {
     fn lookup(&self, _name: Symbol) -> Option<Value> {
+        println!("failed to look up: '{:?}'", _name);
         None
     }
 }
@@ -61,6 +64,10 @@ impl Runtime {
                                 self.eval(alternate.clone())
                             }
                         }
+                        "begin" => {
+                            let rest = list.rest().ok_or(Error::BeginError)?;
+                            self.eprogn(rest)
+                        }
                         _ => Err(Error::NotImplemented),
                     }
                 } else {
@@ -70,6 +77,16 @@ impl Runtime {
                 Err(Error::NotImplemented)
             }
         }
+    }
+
+    pub fn eprogn(&mut self, mut exprs: &Value) -> Result<Value, Error> {
+        let mut last = Value::List(List::Nil);
+        while exprs.is_list() && exprs.as_list().unwrap().is_pair() {
+            let cell = exprs.as_list().unwrap();
+            last = self.eval(cell.first().cloned().unwrap())?;
+            exprs = cell.rest().unwrap();
+        }
+        Ok(last)
     }
 }
 
@@ -117,5 +134,17 @@ mod test {
     fn test_eval_if() {
         let mut rt = Runtime::new();
         assert_eq!(Ok(Value::integer(1)), rt.eval(lisp!("(if true 1 2)")));
+    }
+
+    #[test]
+    fn test_eval_begin() {
+        let mut rt = Runtime::new();
+        assert_eq!(Ok(Value::integer(100)), rt.eval(lisp!("(begin 100)")));
+    }
+
+    #[test]
+    fn test_eval_begin_multiple() {
+        let mut rt = Runtime::new();
+        assert_eq!(Ok(Value::integer(100)), rt.eval(lisp!("(begin 2 3 100)")));
     }
 }
